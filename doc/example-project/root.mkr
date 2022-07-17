@@ -1,0 +1,24 @@
+
+prslib = import("prslib/build.mkr")
+testje = import("testje/build.mkr")
+
+modules = [
+    prslib
+    testje
+]
+
+deploy = [
+    prslib.deploy
+    testje.deploy
+]
+
+deploy2 = [m.deploy for m in modules]
+
+test = [
+    prslib.test
+    testje.test
+]
+
+test = [m.test for m in modules]
+
+export(deploy test)

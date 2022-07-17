@@ -1,0 +1,30 @@
+
+# commment
+
+/*
+Block comment
+*/
+
+tools = import("tools.mkr")
+
+compile = tools.compile
+    .with_flags("Wall")
+
+link = tools.link
+    .with_flags("Wall")
+    .without_flag("Xlolz")
+
+prslib = tools.unpack(tools.mvn_get(artifacts.com_group_etc_prslib type="tar.gz"))
+
+includes = [
+    "."
+    prslib.subpath("prslib/common/include")
+]
+
+exe = link([
+    compile("util.cpp" include=includes)
+    compile("main.cpp" include=includes)
+] libs=[prslib.subpath("prslib/lib/prslib.so")])
+
+
+export(exe)

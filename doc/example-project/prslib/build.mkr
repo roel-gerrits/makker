@@ -1,0 +1,31 @@
+
+artifacts = import("artifacts.mkr")
+tools = import("tools.mkr")
+
+includes = ["."]
+
+sources = [
+    "prslib.cpp"
+    "funcs.cpp"
+]
+
+objects = [tools.compile(s, include=includes) for s in [sources]]
+
+lib = tools.link(objects)
+
+gtest = tools.link(objects +
+    tools.compile("test.cpp" include=includes)
+)
+
+install = tools.mvn_install(
+    artifacts.com_group_etc_prslib type="tar.gz"
+    tools.pack_targz([
+        subpath("prslib/lib" name("prslib.so" lib))
+        subpath("prslib/common/include" "prslib.h")
+]))
+
+deploy = tools.mvn_deploy(install)
+
+build = lib
+test = tools.run_gtest(gtest)
+export(build test install deploy)

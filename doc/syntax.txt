@@ -1,0 +1,58 @@
+
+
+# TOKENS #
+IDENTIFIER
+STRING
+DOT
+BRACK_OPEN
+BRACK_CLOSE
+PAR_OPEN
+PAR_CLOSE
+ASSIGN
+FOR
+IN
+EOS
+
+
+program
+    : statement_list EOS
+
+statement_list
+    : statement [ statement_list ]
+
+statement
+    : assignment_statement
+    | call_statement
+
+assignment_statement
+    : variable ASSIGN expr
+
+call_statement
+    : object PAR_OPEN [ call_arg ] PAR_CLOSE
+
+call_args:
+    : call_arg [ call_args ]
+
+call_arg:
+    : expr
+    | ID ASSIGN expr
+
+expr
+    : object
+    | PAR_OPEN expr PAR_CLOSE
+    | list
+    | list_for
+    | call_statement
+    | STRING
+
+list
+    : BRACK_OPEN (expr)* BRACK_CLOSE
+
+list_for
+    : BRACK_OPEN expr FOR object IN expr BRACK_CLOSE
+
+object
+    : ID [DOT object]
+
+variable
+    : ID

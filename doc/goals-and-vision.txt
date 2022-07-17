@@ -1,0 +1,17 @@
+
+Goals and Vision
+
+# Multi language
+Not made for a specific language
+
+# Configuration over convention
+No assumptions about fixed directory structures
+
+# Parallel by default
+Why not?
+
+# Let the build tool do the building
+No need to specify names for files you don't care about.
+The build tool is responsible for managing build artifacts.
+Clean should never be required
+
