@@ -8,7 +8,7 @@
 #include <stdexcept>
 
 #include "parser/Ast.h"
-#include "Environment.h"
+#include "Scope.h"
 
 
 class InterpretResult {
@@ -33,13 +33,13 @@ private:
 
 class Interpreter {
 public:
-    explicit Interpreter(ObjectStore &object_store, Environment &environment, const Node &ast);
+    explicit Interpreter(ObjectStore &object_store, Scope &root_scope, const Node &ast);
 
     InterpretResult interpret();
 
 private:
     ObjectStore &object_store;
-    Environment &environment;
+    Scope &root_scope;
     InterpretResult result;
     const Node &ast;
 
@@ -51,12 +51,12 @@ private:
 
     void interpret_assignment_statement(const Node &node);
 
-    const Object &parse_expression(const Node &node);
+    const Object &parse_expression(const Scope& scope, const Node &node);
 
-    const Object &parse_function_call(const Node &node);
+    const Object &parse_function_call(const Scope &scope, const Node &node);
 };
 
-InterpretResult interpret(ObjectStore &object_store, Environment &env, const Node &ast);
+InterpretResult interpret(ObjectStore &object_store, Scope &root_scope, const Node &ast);
 
 class InterpretError : public std::exception {
 public:

@@ -24,10 +24,10 @@ add_executable(all_tests
         lexer/StringScanner.cpp
         parser/Ast.cpp
         parser/Parser.cpp
-        interpreter/Environment.cpp
         interpreter/Interpreter.cpp
         interpreter/BasicObjectStore.cpp
         interpreter/Object.cpp
+        interpreter/RootScope.cpp
         parser/Ast.cpp
         parser/Parser.cpp
         )

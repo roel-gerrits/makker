@@ -15,6 +15,7 @@ using testing::Eq;
 #include "lexer/Lexer.h"
 #include "parser/Parser.h"
 #include "Interpreter.h"
+#include "RootScope.h"
 #include "BasicObjectStore.h"
 #include "util/AstSerializer.h"
 #include "util/InterpretResultPrinter.h"
@@ -48,197 +49,197 @@ private:
     std::function<CallResult(const CallArgList &)> handler;
 };
 
-TEST(Environment, test_define_get) {
+TEST(RootScope, test_define_get) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
     Object &x = store.create_struct({});
-    env.define("x", x);
-    EXPECT_THAT(env.get("x"), Ref(x));
+    scope.put("x", x);
+    EXPECT_THAT(scope.get("x"), Ref(x));
 }
 
 TEST(Interpreter, test_assignment) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
     Object &x = store.create_struct({});
-    env.define("x", x);
-    interpret(store, env, parse_str("a=x"));
-    EXPECT_THAT(env.get("a"), Ref(x));
+    scope.put("x", x);
+    interpret(store, scope, parse_str("a=x"));
+    EXPECT_THAT(scope.get("a"), Ref(x));
 }
 
 TEST(Interpreter, test_undefined_error) {
     BasicObjectStore store;
-    Environment env;
-    auto result = interpret(store, env, parse_str("a=x"));
+    RootScope scope;
+    auto result = interpret(store, scope, parse_str("a=x"));
     EXPECT_THAT(result.success(), IsFalse());
 }
 
 TEST(Interpreter, test_already_defined_error) {
     BasicObjectStore store;
-    Environment env;
-    env.define("a", store.create_struct({}));
-    env.define("b", store.create_struct({}));
-    auto result = interpret(store, env, parse_str("a=b"));
+    RootScope scope;
+    scope.put("a", store.create_struct({}));
+    scope.put("b", store.create_struct({}));
+    auto result = interpret(store, scope, parse_str("a=b"));
     EXPECT_THAT(result.success(), IsFalse());
 }
 
 TEST(Interpreter, test_multi_assignment) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
     Object &x = store.create_struct({});
     Object &y = store.create_struct({});
-    env.define("x", x);
-    env.define("y", y);
-    interpret(store, env, parse_str("a=x b=y"));
-    EXPECT_THAT(env.get("a"), Ref(x));
-    EXPECT_THAT(env.get("b"), Ref(y));
+    scope.put("x", x);
+    scope.put("y", y);
+    interpret(store, scope, parse_str("a=x b=y"));
+    EXPECT_THAT(scope.get("a"), Ref(x));
+    EXPECT_THAT(scope.get("b"), Ref(y));
 }
 
 TEST(Interpreter, test_null_assignment) {
     BasicObjectStore store;
-    Environment env;
-    env.define("null", NullObject::get_instance());
-    auto result = interpret(store, env, parse_str("x = null"));
+    RootScope scope;
+    scope.put("null", NullObject::get_instance());
+    auto result = interpret(store, scope, parse_str("x = null"));
     EXPECT_THAT(result.success(), IsFalse());
 }
 
 TEST(Interpreter, test_attr) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
     Object &y = store.create_struct({});
     Object &x = store.create_struct({{"y", y}});
-    env.define("x", x);
-    interpret(store, env, parse_str("a=x.y"));
-    EXPECT_THAT(env.get("a"), Ref(y));
+    scope.put("x", x);
+    interpret(store, scope, parse_str("a=x.y"));
+    EXPECT_THAT(scope.get("a"), Ref(y));
 }
 
 TEST(Interpreter, test_attr2) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
     Object &z = store.create_struct({});
     Object &y = store.create_struct({{"z", z}});
     Object &x = store.create_struct({{"y", y}});
-    env.define("x", x);
-    interpret(store, env, parse_str("a=x.y.z"));
-    EXPECT_THAT(env.get("a"), Ref(z));
+    scope.put("x", x);
+    interpret(store, scope, parse_str("a=x.y.z"));
+    EXPECT_THAT(scope.get("a"), Ref(z));
 }
 
 TEST(Interpreter, test_function_call_success) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
     Object &r = store.create_struct({});
 
     SimpleCallHandler call_handler([&](const CallArgList &args) {
         return CallResult(r);
     });
-    env.define("f", store.create_function(call_handler));
+    scope.put("f", store.create_function(call_handler));
 
-    interpret(store, env, parse_str("x = f()"));
+    interpret(store, scope, parse_str("x = f()"));
 
-    EXPECT_THAT(env.get("x"), Ref(r));
+    EXPECT_THAT(scope.get("x"), Ref(r));
 }
 
 TEST(Interpreter, test_function_call_error) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
 
     SimpleCallHandler call_handler([](const CallArgList &args) {
         CallResult result;
         result.add_call_error("error");
         return result;
     });
-    env.define("f", store.create_function(call_handler));
+    scope.put("f", store.create_function(call_handler));
 
-    const auto result = interpret(store, env, parse_str("x = f()"));
+    const auto result = interpret(store, scope, parse_str("x = f()"));
 
     EXPECT_THAT(result.success(), IsFalse());
 }
 
 TEST(Interpreter, test_function_call_w_single_arg) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
     Object &a = store.create_struct({});
-    env.define("a", a);
+    scope.put("a", a);
 
     SimpleCallHandler call_handler([](const CallArgList &args) {
         return CallResult(args.arg(0).object());
     });
-    env.define("f", store.create_function(call_handler));
+    scope.put("f", store.create_function(call_handler));
 
-    const auto result = interpret(store, env, parse_str("x = f(a)"));
-    EXPECT_THAT(env.get("x"), Ref(a));
+    const auto result = interpret(store, scope, parse_str("x = f(a)"));
+    EXPECT_THAT(scope.get("x"), Ref(a));
 }
 
 TEST(Interpreter, test_function_call_w_multiple_arg) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
     Object &a = store.create_struct({});
     Object &b = store.create_struct({});
     Object &c = store.create_struct({});
-    env.define("a", a);
-    env.define("b", b);
-    env.define("c", c);
+    scope.put("a", a);
+    scope.put("b", b);
+    scope.put("c", c);
 
     SimpleCallHandler call_handler([](const CallArgList &args) {
         return CallResult(args.arg(2).object());
     });
 
-    env.define("f", store.create_function(call_handler));
+    scope.put("f", store.create_function(call_handler));
 
-    const auto result = interpret(store, env, parse_str("x = f(a b c)"));
-    EXPECT_THAT(env.get("x"), Ref(c));
+    const auto result = interpret(store, scope, parse_str("x = f(a b c)"));
+    EXPECT_THAT(scope.get("x"), Ref(c));
 }
 
 TEST(Interpreter, test_function_call_w_kwarg) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
     Object &c = store.create_struct({});
-    env.define("b", store.create_struct({}));
-    env.define("a", store.create_struct({}));
-    env.define("c", c);
+    scope.put("b", store.create_struct({}));
+    scope.put("a", store.create_struct({}));
+    scope.put("c", c);
 
     SimpleCallHandler call_handler([](const CallArgList &args) {
         return CallResult(args.arg("kw2").object());
     });
-    env.define("f", store.create_function(call_handler));
+    scope.put("f", store.create_function(call_handler));
 
-    const auto result = interpret(store, env, parse_str("x = f(a kw1=b kw2=c)"));
+    const auto result = interpret(store, scope, parse_str("x = f(a kw1=b kw2=c)"));
     print_interpret_result(result);
-    EXPECT_THAT(env.get("x"), Ref(c));
+    EXPECT_THAT(scope.get("x"), Ref(c));
 }
 
 TEST(Interpreter, test_function_call_w_attr_arg) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
     Object &b = store.create_struct({});
-    env.define("b", b);
-    env.define("a", store.create_struct({{"b", b}}));
+    scope.put("b", b);
+    scope.put("a", store.create_struct({{"b", b}}));
 
     SimpleCallHandler call_handler([](const CallArgList &args) {
         return CallResult(args.arg(0).object());
     });
-    env.define("f", store.create_function(call_handler));
+    scope.put("f", store.create_function(call_handler));
 
-    const auto result = interpret(store, env, parse_str("x = f(a.b)"));
-    EXPECT_THAT(env.get("x"), Ref(b));
+    const auto result = interpret(store, scope, parse_str("x = f(a.b)"));
+    EXPECT_THAT(scope.get("x"), Ref(b));
 }
 
 TEST(Interpreter, test_string_literal) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
 
-    const auto result = interpret(store, env, parse_str("x = \"abcd\""));
-    EXPECT_THAT(env.get("x").get_string(), Eq("abcd"));
+    const auto result = interpret(store, scope, parse_str("x = \"abcd\""));
+    EXPECT_THAT(scope.get("x").get_string(), Eq("abcd"));
 }
 
 TEST(Interpreter, test_string_arg) {
     BasicObjectStore store;
-    Environment env;
+    RootScope scope;
 
     SimpleCallHandler call_handler([](const CallArgList &args) {
         return CallResult(args.arg(0).object());
     });
-    env.define("f", store.create_function(call_handler));
+    scope.put("f", store.create_function(call_handler));
 
-    const auto result = interpret(store, env, parse_str("x = f(\"abcd\")"));
-    EXPECT_THAT(env.get("x").get_string(), Eq("abcd"));
+    const auto result = interpret(store, scope, parse_str("x = f(\"abcd\")"));
+    EXPECT_THAT(scope.get("x").get_string(), Eq("abcd"));
 }

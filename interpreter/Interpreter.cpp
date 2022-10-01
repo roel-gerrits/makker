@@ -30,9 +30,9 @@ void InterpretResult::add_error(const Node &node, std::string message) {
  * Interpreter::*
  */
 
-Interpreter::Interpreter(ObjectStore &object_store_, Environment &environment_, const Node &ast_) :
+Interpreter::Interpreter(ObjectStore &object_store_, Scope &root_scope_, const Node &ast_) :
         object_store(object_store_),
-        environment(environment_),
+        root_scope(root_scope_),
         ast(ast_) {}
 
 
@@ -63,45 +63,45 @@ void Interpreter::interpret_statement(const Node &node) {
 }
 
 void Interpreter::interpret_call_statement(const Node &node) {
-    parse_function_call(node);
+    parse_function_call(root_scope, node);
 }
 
 void Interpreter::interpret_assignment_statement(const Node &node) {
     const std::string &variable = node.get_child(0).get_token().value;
-    const Object &value = parse_expression(node.get_child(1));
+    const Object &value = parse_expression(root_scope, node.get_child(1));
 
     if (NullObject::is_null(value)) {
-        result.add_error(node, "Cannot set variable to null");
+        result.add_error(node, "Cannot put variable to null");
         throw InterpretError();
     }
 
     try {
-        environment.define(variable, value);
-    } catch (const AlreadyDefinedError &) {
+        root_scope.put(variable, value);
+    } catch (const Scope::AlreadyDefinedError &) {
         result.add_error(node, "Variable already defined");
         throw InterpretError();
     }
 }
 
-const Object &Interpreter::parse_expression(const Node &node) {
+const Object &Interpreter::parse_expression(const Scope &scope, const Node &node) {
 
     if (node.get_type() == NodeType::OBJECT) {
         const std::string &id = node.get_token().value;
 
         if (!node.get_children().empty()) {
-            return parse_expression(node.get_child(0)).attr(id);
+            return parse_expression(scope, node.get_child(0)).attr(id);
         }
 
         try {
-            return environment.get(id);
-        } catch (UndefinedVariableError &) {
+            return scope.get(id);
+        } catch (Scope::UndefinedVariableError &) {
             result.add_error(node, "Undefined variable");
             throw InterpretError();
         }
     }
 
     if (node.get_type() == NodeType::CALL_STATEMENT) {
-        return parse_function_call(node);
+        return parse_function_call(scope, node);
     }
 
     if (node.get_type() == NodeType::STRING) {
@@ -113,8 +113,8 @@ const Object &Interpreter::parse_expression(const Node &node) {
     throw InterpretError();
 }
 
-const Object &Interpreter::parse_function_call(const Node &node) {
-    const Object &function_object = parse_expression(node.get_child(0));
+const Object &Interpreter::parse_function_call(const Scope &scope, const Node &node) {
+    const Object &function_object = parse_expression(scope, node.get_child(0));
 
     if (!function_object.is_callable()) {
         result.add_error(node, "Object is not callable");
@@ -140,9 +140,9 @@ const Object &Interpreter::parse_function_call(const Node &node) {
     CallArgList arg_list;
     for (auto arg_node = ++node.get_children().begin(); arg_node != node.get_children().end(); arg_node++) {
         if (arg_node->get_type() == NodeType::KWARG) {
-            arg_list.add(arg_node->get_token().value, arg_store.emplace_back(node, parse_expression(arg_node->get_child(0))));
+            arg_list.add(arg_node->get_token().value, arg_store.emplace_back(node, parse_expression(scope, arg_node->get_child(0))));
         } else {
-            arg_list.add(arg_store.emplace_back(node, parse_expression(*arg_node)));
+            arg_list.add(arg_store.emplace_back(node, parse_expression(scope, *arg_node)));
         }
     }
 
@@ -165,7 +165,7 @@ const Object &Interpreter::parse_function_call(const Node &node) {
 }
 
 
-InterpretResult interpret(ObjectStore &object_store, Environment &env, const Node &ast) {
-    Interpreter interpreter(object_store, env, ast);
+InterpretResult interpret(ObjectStore &object_store, Scope &root_scope, const Node &ast) {
+    Interpreter interpreter(object_store, root_scope, ast);
     return interpreter.interpret();
 }
