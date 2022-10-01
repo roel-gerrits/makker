@@ -243,3 +243,32 @@ TEST(Interpreter, test_string_arg) {
     const auto result = interpret(store, scope, parse_str("x = f(\"abcd\")"));
     EXPECT_THAT(scope.get("x").get_string(), Eq("abcd"));
 }
+
+TEST(Interpreter, test_lists_of_variables) {
+    BasicObjectStore store;
+    RootScope scope;
+
+    const Object& a = store.create_string("a");
+    const Object& b = store.create_string("b");
+    const Object& c = store.create_string("c");
+    scope.put("a", a);
+    scope.put("b", b);
+    scope.put("c", c);
+
+    const auto result = interpret(store, scope, parse_str("x = [a b c]"));
+    const Object& x = scope.get("x");
+    EXPECT_THAT(x.entries().at(0).get(), Ref(a));
+    EXPECT_THAT(x.entries().at(1).get(), Ref(b));
+    EXPECT_THAT(x.entries().at(2).get(), Ref(c));
+}
+
+TEST(Interpreter, test_lists_of_strings) {
+    BasicObjectStore store;
+    RootScope scope;
+
+    const auto result = interpret(store, scope, parse_str("x = [\"a\" \"b\" \"c\"]"));
+    const Object& x = scope.get("x");
+    EXPECT_THAT(x.entries().at(0).get().get_string(), Eq("a"));
+    EXPECT_THAT(x.entries().at(1).get().get_string(), Eq("b"));
+    EXPECT_THAT(x.entries().at(2).get().get_string(), Eq("c"));
+}

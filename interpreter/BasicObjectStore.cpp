@@ -15,3 +15,7 @@ Object &BasicObjectStore::create_function(CallHandler &handler) {
 Object &BasicObjectStore::create_string(std::string value) {
     return string_objects.emplace_back(std::move(value));
 }
+
+Object &BasicObjectStore::create_list(std::list<std::reference_wrapper<const Object>> entries) {
+    return list_objects.emplace_back(entries);
+}

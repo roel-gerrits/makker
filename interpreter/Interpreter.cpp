@@ -109,6 +109,16 @@ const Object &Interpreter::parse_expression(const Scope &scope, const Node &node
         return obj;
     }
 
+    if (node.get_type() == NodeType::LIST) {
+        std::list<std::reference_wrapper<const Object>> entries;
+        for (const auto & entry_node : node.get_children()) {
+            entries.emplace_back(parse_expression(scope, entry_node));
+        }
+        return object_store.create_list(entries);
+    }
+
+    // Todo: LIST_FOR
+
     result.add_error(node, "Unexpected node '" + std::string(to_str(node.get_type())) + "'");
     throw InterpretError();
 }

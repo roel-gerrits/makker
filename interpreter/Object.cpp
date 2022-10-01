@@ -8,11 +8,6 @@
 
 
 /*
- * Object::*
- */
-
-
-/*
  * NullObject:*
  */
 
@@ -39,6 +34,10 @@ const CallHandler &NullObject::get_call_handler() const {
 
 const std::string &NullObject::get_string() const {
     throw ObjectIsNotAString(*this);
+}
+
+const std::vector<std::reference_wrapper<const Object>> &NullObject::entries() const {
+    throw ObjectIsNotAList(*this);
 }
 
 
@@ -70,6 +69,10 @@ const std::string &StructObject::get_string() const {
     throw ObjectIsNotAString(*this);
 }
 
+const std::vector<std::reference_wrapper<const Object>> &StructObject::entries() const {
+    throw ObjectIsNotAList(*this);
+}
+
 
 /*
  * FunctionObject::*
@@ -93,6 +96,10 @@ const CallHandler &FunctionObject::get_call_handler() const {
 
 const std::string &FunctionObject::get_string() const {
     throw ObjectIsNotAString(*this);
+}
+
+const std::vector<std::reference_wrapper<const Object>> &FunctionObject::entries() const {
+    throw ObjectIsNotAList(*this);
 }
 
 
@@ -186,4 +193,36 @@ const CallHandler &StringObject::get_call_handler() const {
 
 const std::string &StringObject::get_string() const {
     return value;
+}
+
+const std::vector<std::reference_wrapper<const Object>> &StringObject::entries() const {
+    throw ObjectIsNotAList(*this);
+}
+
+
+/*
+ * ListObject::*
+ */
+
+ListObject::ListObject(std::list<std::reference_wrapper<const Object>> entries) :
+        _entries(entries.begin(), entries.end()) {}
+
+const Object &ListObject::attr(const std::string &id) const {
+    throw UnknownAttributeError(id);
+}
+
+bool ListObject::is_callable() const {
+    return false;
+}
+
+const CallHandler &ListObject::get_call_handler() const {
+    throw ObjectNotCallableError(*this);
+}
+
+const std::string &ListObject::get_string() const {
+    throw ObjectIsNotAString(*this);
+}
+
+const std::vector<std::reference_wrapper<const Object>> &ListObject::entries() const {
+    return _entries;
 }

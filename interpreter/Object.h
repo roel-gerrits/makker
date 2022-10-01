@@ -99,6 +99,8 @@ public:
     [[nodiscard]] virtual const CallHandler &get_call_handler() const = 0;
 
     [[nodiscard]] virtual const std::string &get_string() const = 0;
+
+    [[nodiscard]] virtual const std::vector<std::reference_wrapper<const Object>> &entries() const = 0;
 };
 
 bool operator==(std::reference_wrapper<const Object>, std::reference_wrapper<const Object>);
@@ -116,6 +118,8 @@ public:
     [[nodiscard]] const CallHandler &get_call_handler() const override;
 
     [[nodiscard]] const std::string &get_string() const override;
+
+    [[nodiscard]] const std::vector<std::reference_wrapper<const Object>> &entries() const override;
 };
 
 class StructObject : public Object {
@@ -129,6 +133,8 @@ public:
     [[nodiscard]] const CallHandler &get_call_handler() const override;
 
     [[nodiscard]] const std::string &get_string() const override;
+
+    [[nodiscard]] const std::vector<std::reference_wrapper<const Object>> &entries() const override;
 
 private:
     const std::unordered_map<std::string, const Object &> attributes;
@@ -147,6 +153,8 @@ public:
 
     [[nodiscard]] const std::string &get_string() const override;
 
+    [[nodiscard]] const std::vector<std::reference_wrapper<const Object>> &entries() const override;
+
 private:
     CallHandler &handler;
 };
@@ -164,10 +172,30 @@ public:
 
     [[nodiscard]] const std::string &get_string() const override;
 
+    [[nodiscard]] const std::vector<std::reference_wrapper<const Object>> &entries() const override;
+
 private:
     const std::string value;
 };
 
+
+class ListObject : public Object {
+public:
+    explicit ListObject(std::list<std::reference_wrapper<const Object>> entries);
+
+    [[nodiscard]] const Object &attr(const std::string &id) const override;
+
+    [[nodiscard]] bool is_callable() const override;
+
+    [[nodiscard]] const CallHandler &get_call_handler() const override;
+
+    [[nodiscard]] const std::string &get_string() const override;
+
+    [[nodiscard]] const std::vector<std::reference_wrapper<const Object>> &entries() const override;
+
+private:
+    const std::vector<std::reference_wrapper<const Object>> _entries;
+};
 
 class ObjectStore {
 public:
@@ -176,6 +204,8 @@ public:
     virtual Object &create_function(CallHandler &handler) = 0;
 
     virtual Object &create_string(std::string value) = 0;
+
+    virtual Object &create_list(std::list<std::reference_wrapper<const Object>> entries) = 0;
 };
 
 
@@ -201,6 +231,15 @@ class ObjectIsNotAString : public std::runtime_error {
 public:
     explicit ObjectIsNotAString(const Object &object_) :
             std::runtime_error("Object is not a string"),
+            object(object_) {};
+private:
+    const Object &object;
+};
+
+class ObjectIsNotAList : public std::runtime_error {
+public:
+    explicit ObjectIsNotAList(const Object &object_) :
+            std::runtime_error("Object is not a list"),
             object(object_) {};
 private:
     const Object &object;
