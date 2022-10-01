@@ -28,6 +28,7 @@ add_executable(all_tests
         interpreter/BasicObjectStore.cpp
         interpreter/Object.cpp
         interpreter/RootScope.cpp
+        interpreter/ScopeWrapper.cpp
         parser/Ast.cpp
         parser/Parser.cpp
         )

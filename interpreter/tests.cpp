@@ -16,6 +16,7 @@ using testing::Eq;
 #include "parser/Parser.h"
 #include "Interpreter.h"
 #include "RootScope.h"
+#include "ScopeWrapper.h"
 #include "BasicObjectStore.h"
 #include "util/AstSerializer.h"
 #include "util/InterpretResultPrinter.h"
@@ -49,12 +50,26 @@ private:
     std::function<CallResult(const CallArgList &)> handler;
 };
 
-TEST(RootScope, test_define_get) {
+TEST(Scope, test_define_get) {
     BasicObjectStore store;
     RootScope scope;
     Object &x = store.create_struct({});
     scope.put("x", x);
     EXPECT_THAT(scope.get("x"), Ref(x));
+}
+
+TEST(Scope, test_scope_wrapping) {
+    BasicObjectStore store;
+    RootScope base_scope;
+    const Object &one = store.create_string("one");
+    const Object &two = store.create_string("two");
+    base_scope.put("x", one);
+
+    ScopeWrapper wrapped_scope(base_scope);
+    EXPECT_THAT(wrapped_scope.get("x"), Ref(one));
+
+    wrapped_scope.put("x", two);
+    EXPECT_THAT(wrapped_scope.get("x"), Ref(two));
 }
 
 TEST(Interpreter, test_assignment) {
@@ -248,15 +263,15 @@ TEST(Interpreter, test_lists_of_variables) {
     BasicObjectStore store;
     RootScope scope;
 
-    const Object& a = store.create_string("a");
-    const Object& b = store.create_string("b");
-    const Object& c = store.create_string("c");
+    const Object &a = store.create_string("a");
+    const Object &b = store.create_string("b");
+    const Object &c = store.create_string("c");
     scope.put("a", a);
     scope.put("b", b);
     scope.put("c", c);
 
     const auto result = interpret(store, scope, parse_str("x = [a b c]"));
-    const Object& x = scope.get("x");
+    const Object &x = scope.get("x");
     EXPECT_THAT(x.entries().at(0).get(), Ref(a));
     EXPECT_THAT(x.entries().at(1).get(), Ref(b));
     EXPECT_THAT(x.entries().at(2).get(), Ref(c));
@@ -267,8 +282,41 @@ TEST(Interpreter, test_lists_of_strings) {
     RootScope scope;
 
     const auto result = interpret(store, scope, parse_str("x = [\"a\" \"b\" \"c\"]"));
-    const Object& x = scope.get("x");
+    const Object &x = scope.get("x");
     EXPECT_THAT(x.entries().at(0).get().get_string(), Eq("a"));
     EXPECT_THAT(x.entries().at(1).get().get_string(), Eq("b"));
     EXPECT_THAT(x.entries().at(2).get().get_string(), Eq("c"));
+}
+
+TEST(Interpreter, test_lists_for) {
+    BasicObjectStore store;
+    RootScope scope;
+
+    SimpleCallHandler f_concat([&](const CallArgList &args) {
+        const std::string str1 = args.arg(0).object().get_string();
+        const std::string str2 = args.arg(1).object().get_string();
+
+        return CallResult(store.create_string(str1 + str2));
+    });
+    scope.put("f_concat", store.create_function(f_concat));
+
+    const auto result = interpret(store, scope, parse_str("x = [f_concat(x \"q\") for x in [\"a\" \"b\" \"c\"]]"));
+
+    const Object &x = scope.get("x");
+    EXPECT_THAT(x.entries().at(0).get().get_string(), Eq("aq"));
+    EXPECT_THAT(x.entries().at(1).get().get_string(), Eq("bq"));
+    EXPECT_THAT(x.entries().at(2).get().get_string(), Eq("cq"));
+}
+
+TEST(Interpreter, test_lists_for_faulty_var) {
+    BasicObjectStore store;
+    RootScope scope;
+
+    SimpleCallHandler f([&](const CallArgList &args) {
+        return CallResult(NullObject::get_instance());
+    });
+    scope.put("f", store.create_function(f));
+
+    const auto result = interpret(store, scope, parse_str("x = [f(x) for y in [\"a\"]]"));
+    EXPECT_THAT(result.success(), IsFalse());
 }

@@ -6,13 +6,15 @@ handle import()
 
 functionality for importing python units
 
-handle list-for
-    requires scoping?
-
 remove Object::is_callable() and rely on exceptions,
     or introduce is_* methods for all Object subtypes?
 
+
+
 DONE
+
+handle list-for
+    requires scoping?
 
 handle lists
     add object type 'ListObject'

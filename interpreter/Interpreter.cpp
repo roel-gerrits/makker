@@ -3,6 +3,7 @@
 //
 
 #include "Interpreter.h"
+#include "ScopeWrapper.h"
 
 #include <utility>
 
@@ -111,16 +112,34 @@ const Object &Interpreter::parse_expression(const Scope &scope, const Node &node
 
     if (node.get_type() == NodeType::LIST) {
         std::list<std::reference_wrapper<const Object>> entries;
-        for (const auto & entry_node : node.get_children()) {
+        for (const auto &entry_node: node.get_children()) {
             entries.emplace_back(parse_expression(scope, entry_node));
         }
         return object_store.create_list(entries);
     }
 
-    // Todo: LIST_FOR
+    if (node.get_type() == NodeType::LIST_FOR) {
+        return parse_list_for(scope, node);
+    }
 
     result.add_error(node, "Unexpected node '" + std::string(to_str(node.get_type())) + "'");
     throw InterpretError();
+}
+
+const Object &Interpreter::parse_list_for(const Scope &scope, const Node &node) {
+    const Node &expr_node = node.get_child(0);
+    const Node &var_node = node.get_child(1);
+    const Object &input_list = parse_expression(scope, node.get_child(2));
+
+    std::list<std::reference_wrapper<const Object>> output_list;
+    for (const Object &input_obj: input_list.entries()) {
+        ScopeWrapper expr_scope(scope);
+        expr_scope.put(var_node.get_token().value, input_obj);
+        const Object &output_obj = parse_expression(expr_scope, expr_node);
+        output_list.emplace_back(output_obj);
+    }
+
+    return object_store.create_list(output_list);
 }
 
 const Object &Interpreter::parse_function_call(const Scope &scope, const Node &node) {

@@ -11,7 +11,7 @@ class Scope {
 public:
     [[nodiscard]] virtual const Object &get(const std::string &variable) const = 0;
 
-    virtual const Object &put(const std::string &variable, const Object &object) = 0;
+    virtual void put(const std::string &variable, const Object &object) = 0;
 
     class UndefinedVariableError : public std::runtime_error {
     public:

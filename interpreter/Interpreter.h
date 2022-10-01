@@ -53,6 +53,8 @@ private:
 
     const Object &parse_expression(const Scope& scope, const Node &node);
 
+    const Object &parse_list_for(const Scope& scope, const Node &node);
+
     const Object &parse_function_call(const Scope &scope, const Node &node);
 };
 

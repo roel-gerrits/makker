@@ -12,10 +12,9 @@ const Object &RootScope::get(const std::string &variable) const {
     return it->second;
 }
 
-const Object &RootScope::put(const std::string &variable, const Object &object) {
+void RootScope::put(const std::string &variable, const Object &object) {
     auto[it, is_inserted] = objects.emplace(variable, object);
     if (!is_inserted) {
         throw AlreadyDefinedError(variable);
     }
-    return it->second;
 }
