@@ -11,7 +11,7 @@
 #include "Scanner.h"
 
 
-class Lexer : public TokenStream{
+class Lexer : public TokenStream {
 public:
     explicit Lexer(Scanner &scanner);
 
@@ -21,6 +21,7 @@ private:
     Scanner &scanner;
 
     bool check(char ch);
+
     void expect(char ch);
 };
 

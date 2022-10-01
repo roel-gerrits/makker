@@ -13,7 +13,7 @@ class BasicObjectStore : public ObjectStore {
 public:
     Object &create_struct(std::unordered_map<std::string, const Object &> attributes) override;
 
-    Object &create_function(CallHandler& handler) override;
+    Object &create_function(CallHandler &handler) override;
 
     Object &create_string(std::string value) override;
 

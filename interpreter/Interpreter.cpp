@@ -87,18 +87,7 @@ void Interpreter::interpret_assignment_statement(const Node &node) {
 const Object &Interpreter::parse_expression(const Scope &scope, const Node &node) {
 
     if (node.get_type() == NodeType::OBJECT) {
-        const std::string &id = node.get_token().value;
-
-        if (!node.get_children().empty()) {
-            return parse_expression(scope, node.get_child(0)).attr(id);
-        }
-
-        try {
-            return scope.get(id);
-        } catch (Scope::UndefinedVariableError &) {
-            result.add_error(node, "Undefined variable");
-            throw InterpretError();
-        }
+        return parse_object(scope, node);
     }
 
     if (node.get_type() == NodeType::CALL_STATEMENT) {
@@ -106,24 +95,41 @@ const Object &Interpreter::parse_expression(const Scope &scope, const Node &node
     }
 
     if (node.get_type() == NodeType::STRING) {
-        const Object &obj = object_store.create_string(node.get_token().value);
-        return obj;
+        return object_store.create_string(node.get_token().value);
     }
 
     if (node.get_type() == NodeType::LIST) {
-        std::list<std::reference_wrapper<const Object>> entries;
-        for (const auto &entry_node: node.get_children()) {
-            entries.emplace_back(parse_expression(scope, entry_node));
-        }
-        return object_store.create_list(entries);
+        return parse_list(scope, node);
     }
 
     if (node.get_type() == NodeType::LIST_FOR) {
         return parse_list_for(scope, node);
     }
 
-    result.add_error(node, "Unexpected node '" + std::string(to_str(node.get_type())) + "'");
-    throw InterpretError();
+    throw std::runtime_error("Unexpected node '" + std::string(to_str(node.get_type())) + "'");
+}
+
+const Object &Interpreter::parse_object(const Scope &scope, const Node &node) {
+    const std::string &id = node.get_token().value;
+
+    if (!node.get_children().empty()) {
+        return parse_expression(scope, node.get_child(0)).attr(id);
+    }
+
+    try {
+        return scope.get(id);
+    } catch (Scope::UndefinedVariableError &) {
+        result.add_error(node, "Undefined variable");
+        throw InterpretError();
+    }
+}
+
+const Object &Interpreter::parse_list(const Scope &scope, const Node &node) {
+    std::list<std::reference_wrapper<const Object>> entries;
+    for (const auto &entry_node: node.get_children()) {
+        entries.emplace_back(parse_expression(scope, entry_node));
+    }
+    return object_store.create_list(entries);
 }
 
 const Object &Interpreter::parse_list_for(const Scope &scope, const Node &node) {

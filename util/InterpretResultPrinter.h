@@ -6,4 +6,4 @@
 
 #include "interpreter/Interpreter.h"
 
-void print_interpret_result(const InterpretResult& result);
+void print_interpret_result(const InterpretResult &result);

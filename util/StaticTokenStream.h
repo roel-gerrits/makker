@@ -9,7 +9,7 @@
 
 #include <vector>
 
-class StaticTokenStream : public TokenStream{
+class StaticTokenStream : public TokenStream {
 public:
     explicit StaticTokenStream(std::vector<TokenType> tokentypes);
 

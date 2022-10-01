@@ -21,7 +21,7 @@ enum class TokenType {
     EOS,
 };
 
-const char * to_str(TokenType t);
+const char *to_str(TokenType t);
 
 std::ostream &operator<<(std::ostream &os, const TokenType &t);
 

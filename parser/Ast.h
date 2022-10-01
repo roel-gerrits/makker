@@ -37,7 +37,7 @@ public:
 
     [[nodiscard]] const std::list<Node> &get_children() const;
 
-    [[nodiscard]] const Node& get_child(unsigned int index) const;
+    [[nodiscard]] const Node &get_child(unsigned int index) const;
 
 private:
     const NodeType type;

@@ -6,7 +6,7 @@
 
 #include "Scanner.h"
 
-class StringScanner : public Scanner{
+class StringScanner : public Scanner {
 public:
     explicit StringScanner(std::string str);
 

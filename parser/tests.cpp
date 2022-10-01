@@ -29,7 +29,7 @@ static std::string ast_to_string(const Node &node) {
     return result;
 }
 
-static std::string parse_str(const std::string& input) {
+static std::string parse_str(const std::string &input) {
     StringScanner s(input);
     Lexer lex(s);
     return ast_to_string(parse(lex));

@@ -218,7 +218,6 @@ TEST(Interpreter, test_function_call_w_kwarg) {
     scope.put("f", store.create_function(call_handler));
 
     const auto result = interpret(store, scope, parse_str("x = f(a kw1=b kw2=c)"));
-    print_interpret_result(result);
     EXPECT_THAT(scope.get("x"), Ref(c));
 }
 
