@@ -13,6 +13,8 @@ class RewindableTokenStream {
 public:
     explicit RewindableTokenStream(TokenStream &source);
 
+    const Token &peek();
+
     const Token &next();
 
     class Snapshot {

@@ -29,9 +29,8 @@ const char *to_str(TokenType t) {
             return "IN";
         case TokenType::EOS:
             return "EOS";
-        default:
-            return "???";
     }
+    return "???";
 }
 
 std::ostream &operator<<(std::ostream &os, const TokenType &t) {

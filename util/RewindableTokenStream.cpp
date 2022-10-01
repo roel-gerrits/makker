@@ -11,6 +11,13 @@ RewindableTokenStream::RewindableTokenStream(TokenStream &source) :
         buffer_start_index(0),
         buffer_current_index(0) {}
 
+const Token &RewindableTokenStream::peek() {
+    if (buffer_pos == buffer.end()) {
+        buffer_pos = buffer.emplace(buffer.end(), source.next());
+    }
+    return *buffer_pos;
+}
+
 const Token &RewindableTokenStream::next() {
     if (buffer_pos == buffer.end()) {
         buffer_pos = buffer.emplace(buffer.end(), source.next());

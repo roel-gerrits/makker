@@ -7,8 +7,8 @@
 std::string ast_to_string(const Node &node) {
     std::string result;
     result.append(to_str(node.get_type()));
-    if (!node.get_data().empty()) {
-        result.append(":" + node.get_data());
+    if (!node.get_token().value.empty()) {
+        result.append(":" + node.get_token().value);
     }
     if (!node.get_children().empty()) {
         result.append("( ");

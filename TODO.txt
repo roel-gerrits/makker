@@ -1,0 +1,32 @@
+TODO
+
+rewrite Environment to 'root-object'
+    introduce ScopeView interface?
+    ... but object attrs are not writable...
+
+some kind of standard library?
+
+handle import()
+
+functionality for importing python units
+
+handle lists
+    add object type 'ListObject'
+
+handle list-for
+    requires scoping?
+
+
+DONE
+
+interpret function calls with keyword arguments
+    - add kwarg ast node
+
+interpret string objects
+
+forbid assigning of NullObject to variables
+
+interpret function calls with positional arguments
+
+fix parser tests
+

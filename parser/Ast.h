@@ -7,17 +7,17 @@
 
 #include <list>
 #include <string>
+#include "lexer/Token.h"
 
 enum class NodeType {
     PROGRAM,
-    STATEMENT_LIST,
     ASSIGNMENT_STATEMENT,
     CALL_STATEMENT,
-    EXPR,
+    KWARG,
     LIST,
     LIST_FOR,
     OBJECT,
-    VARIABALE,
+    VARIABLE,
     STRING,
 };
 
@@ -25,21 +25,23 @@ const char *to_str(NodeType type);
 
 class Node {
 public:
-    explicit Node(NodeType type);
+//    explicit Node(NodeType type);
 
-    Node(NodeType type, std::string data);
+    Node(NodeType type, Token data);
 
     void add_child(Node &&child);
 
     [[nodiscard]] NodeType get_type() const;
 
-    [[nodiscard]] const std::string &get_data() const;
+    [[nodiscard]] const Token &get_token() const;
 
     [[nodiscard]] const std::list<Node> &get_children() const;
 
+    [[nodiscard]] const Node& get_child(unsigned int index) const;
+
 private:
     const NodeType type;
-    const std::string data;
+    const Token token;
     std::list<Node> children;
 };
 

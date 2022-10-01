@@ -2,19 +2,17 @@
 
 # in directory '.'
 # finds root.mkr and lists all exported target for all sub-units
-$ mkr
+$ mkr -l
 prslib/
     build
     install
     deploy
-
 testje/
     exe
-
 deploy
 
 # finds root.mkr and lists all target including not-exported for all sub-units (for debugging purposes)
-$ mkr -a
+$ mkr -la
 prslib/
     tools
     lib
@@ -35,7 +33,7 @@ testje/
 deploy
 
 # in directory 'prslib/'
-$ mkr
+$ mkr -l
 install
 deploy
 

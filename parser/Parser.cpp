@@ -26,9 +26,10 @@ static Node parse_expr(RewindableTokenStream &tokens);
 static Node parse_call_arg(RewindableTokenStream &tokens) {
     auto snapshot = tokens.snapshot();
     try {
-        read(tokens, TokenType::IDENTIFIER);
+        Node node(NodeType::KWARG, read(tokens, TokenType::IDENTIFIER));
         read(tokens, TokenType::ASSIGN);
-        return parse_expr(tokens);
+        node.add_child(parse_expr(tokens));
+        return node;
     } catch (const UnexpectedTokenError &e) {
         tokens.rewind(snapshot);
     }
@@ -41,7 +42,7 @@ static Node parse_call_arg(RewindableTokenStream &tokens) {
  *      : object PAR_OPEN ( call_arg )* PAR_CLOSE
  */
 static Node parse_call_statement(RewindableTokenStream &tokens) {
-    Node node(NodeType::CALL_STATEMENT);
+    Node node(NodeType::CALL_STATEMENT, tokens.peek());
     node.add_child(parse_object(tokens));
     read(tokens, TokenType::PAR_OPEN);
     while (true) {
@@ -63,7 +64,7 @@ static Node parse_call_statement(RewindableTokenStream &tokens) {
  */
 static Node parse_variable(RewindableTokenStream &tokens) {
     Token token = read(tokens, TokenType::IDENTIFIER);
-    return {NodeType::VARIABALE, token.value};
+    return {NodeType::VARIABLE, token};
 }
 
 /*
@@ -75,7 +76,7 @@ static Node parse_object(RewindableTokenStream &tokens) {
 
     while (true) {
         Token id = read(tokens, TokenType::IDENTIFIER);
-        auto node = std::make_unique<Node>(NodeType::OBJECT, id.value);
+        auto node = std::make_unique<Node>(NodeType::OBJECT, id);
 
         if (prev_node) {
             node->add_child(std::move(*prev_node));
@@ -101,7 +102,7 @@ static Node parse_object(RewindableTokenStream &tokens) {
  *      : BRACK_OPEN (expr)* BRACK_CLOSE
  */
 static Node parse_list(RewindableTokenStream &tokens) {
-    Node node(NodeType::LIST);
+    Node node(NodeType::LIST, tokens.peek());
     read(tokens, TokenType::BRACK_OPEN);
     while (true) {
         try {
@@ -120,7 +121,7 @@ static Node parse_list(RewindableTokenStream &tokens) {
  *      : BRACK_OPEN expr FOR variable IN expr BRACK_CLOSE
  */
 static Node parse_list_for(RewindableTokenStream &tokens) {
-    Node node(NodeType::LIST_FOR);
+    Node node(NodeType::LIST_FOR, tokens.peek());
     read(tokens, TokenType::BRACK_OPEN);
     node.add_child(parse_expr(tokens));
     read(tokens, TokenType::FOR);
@@ -136,8 +137,8 @@ static Node parse_list_for(RewindableTokenStream &tokens) {
  *      : call_statement
  *      | object
  *      | PAR_OPEN expr PAR_CLOSE
- *      | list ## TODO
- *      | list_for ## TODO
+ *      | list
+ *      | list_for
  *      | STRING
  */
 static Node parse_expr(RewindableTokenStream &tokens) {
@@ -184,7 +185,7 @@ static Node parse_expr(RewindableTokenStream &tokens) {
 
     try {
         Token token = read(tokens, TokenType::STRING);
-        return {NodeType::STRING, token.value};
+        return {NodeType::STRING, token};
     } catch (const UnexpectedTokenError &e) {
         tokens.rewind(snapshot);
         failure_token = &e.get_token();
@@ -202,7 +203,7 @@ static Node parse_expr(RewindableTokenStream &tokens) {
  *    : variable ASSIGN expr
  */
 static Node parse_assignment_statement(RewindableTokenStream &tokens) {
-    Node node(NodeType::ASSIGNMENT_STATEMENT);
+    Node node(NodeType::ASSIGNMENT_STATEMENT, tokens.peek());
     node.add_child(parse_variable(tokens));
     read(tokens, TokenType::ASSIGN);
     node.add_child(parse_expr(tokens));
@@ -240,7 +241,7 @@ static Node parse_statement(RewindableTokenStream &tokens) {
  *      : ( statement )* EOS
  */
 static Node parse_program(RewindableTokenStream &tokens) {
-    Node node(NodeType::PROGRAM);
+    Node node(NodeType::PROGRAM, tokens.peek());
 
     while (true) {
         auto snapshot = tokens.snapshot();
