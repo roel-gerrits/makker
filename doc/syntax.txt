@@ -27,6 +27,9 @@ statement
 assignment_statement
     : variable ASSIGN expr
 
+import_statement
+    : "import" PAR_OPEN STRING PAR_CLOSE
+
 call_statement
     : object PAR_OPEN [ call_arg ] PAR_CLOSE
 
@@ -42,6 +45,7 @@ expr
     | PAR_OPEN expr PAR_CLOSE
     | list
     | list_for
+    | import_statement
     | call_statement
     | STRING
 

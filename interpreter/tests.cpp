@@ -20,9 +20,17 @@ using testing::Eq;
 #include "BasicObjectStore.h"
 #include "util/AstSerializer.h"
 #include "util/InterpretResultPrinter.h"
+#include "parser/StaticImportResolver.h"
 
 #include <functional>
 #include <utility>
+
+
+static Node parse(TokenStream &tokens) {
+    StaticImportResolver import_resolver;
+    Parser parser(import_resolver);
+    return parser.parse(tokens);
+}
 
 static Node parse_str(const std::string &input) {
     StringScanner s(input);
@@ -165,7 +173,6 @@ TEST(Interpreter, test_function_call_error) {
     scope.put("f", store.create_function(call_handler));
 
     const auto result = interpret(store, scope, parse_str("x = f()"));
-
     EXPECT_THAT(result.success(), IsFalse());
 }
 

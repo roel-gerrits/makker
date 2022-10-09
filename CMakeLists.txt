@@ -24,6 +24,7 @@ add_executable(all_tests
         lexer/StringScanner.cpp
         parser/Ast.cpp
         parser/Parser.cpp
+        parser/StaticImportResolver.cpp
         interpreter/Interpreter.cpp
         interpreter/BasicObjectStore.cpp
         interpreter/Object.cpp
