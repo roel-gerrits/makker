@@ -5,7 +5,7 @@
 #pragma once
 
 #include <string>
-#include "Scanner.h"
+#include "Source.h"
 
 enum class TokenType {
     IDENTIFIER,
@@ -27,18 +27,18 @@ std::ostream &operator<<(std::ostream &os, const TokenType &t);
 
 class Token {
 public:
-    Position pos;
+    const Source::Location& location;
     TokenType type;
     std::string value;
 
-    Token(Position pos_, TokenType type_, std::string value_) :
-            pos(pos_),
+    Token(const Source::Location&  location_, TokenType type_, std::string value_) :
+            location(location_),
             type(type_),
             value(std::move(value_)) {
     }
 
-    Token(Position pos_, TokenType type_) :
-            pos(pos_),
+    Token(const Source::Location&  location_, TokenType type_) :
+            location(location_),
             type(type_),
             value() {
     }

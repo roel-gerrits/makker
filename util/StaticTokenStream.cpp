@@ -3,14 +3,16 @@
 //
 
 #include "StaticTokenStream.h"
-
+#include "parser/StringSource.h"
 #include <utility>
+
+
+static StringSource dummy_source("");
 
 static std::vector<Token> create_tokens(std::vector<TokenType> tokentypes) {
     std::vector<Token> tokens;
-    unsigned int i = 0;
     for (const TokenType &type: tokentypes) {
-        tokens.push_back(Token({i, i}, type));
+        tokens.emplace_back(dummy_source.get_location(), type);
     }
     return tokens;
 }

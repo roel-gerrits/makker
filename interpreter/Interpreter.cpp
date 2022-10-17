@@ -4,6 +4,7 @@
 
 #include "Interpreter.h"
 #include "ScopeWrapper.h"
+#include "RootScope.h"
 
 #include <utility>
 
@@ -39,37 +40,37 @@ Interpreter::Interpreter(ObjectStore &object_store_, Scope &root_scope_, const N
 
 InterpretResult Interpreter::interpret() {
     try {
-        interpret_program(ast);
+        interpret_program(root_scope, ast);
     } catch (const InterpretError &) {
-
+        // ignore?
     }
     return result;
 }
 
-void Interpreter::interpret_program(const Node &node) {
+void Interpreter::interpret_program(Scope &scope, const Node &node) {
     for (const Node &child: node.get_children()) {
-        interpret_statement(child);
+        interpret_statement(scope, child);
     }
 }
 
-void Interpreter::interpret_statement(const Node &node) {
+void Interpreter::interpret_statement(Scope &scope, const Node &node) {
     if (node.get_type() == NodeType::ASSIGNMENT_STATEMENT) {
-        interpret_assignment_statement(node);
+        interpret_assignment_statement(scope, node);
     } else if (node.get_type() == NodeType::CALL_STATEMENT) {
-        interpret_call_statement(node);
+        interpret_call_statement(scope, node);
     } else {
         result.add_error(node, "Unexpected node '" + std::string(to_str(node.get_type())) + "'");
         throw InterpretError();
     }
 }
 
-void Interpreter::interpret_call_statement(const Node &node) {
-    parse_function_call(root_scope, node);
+void Interpreter::interpret_call_statement(Scope &scope, const Node &node) {
+    parse_function_call(scope, node);
 }
 
-void Interpreter::interpret_assignment_statement(const Node &node) {
-    const std::string &variable = node.get_child(0).get_token().value;
-    const Object &value = parse_expression(root_scope, node.get_child(1));
+void Interpreter::interpret_assignment_statement(Scope &scope, const Node &node) {
+    const std::string &variable = node.get_child(0).get_data();
+    const Object &value = parse_expression(scope, node.get_child(1));
 
     if (NullObject::is_null(value)) {
         result.add_error(node, "Cannot put variable to null");
@@ -77,14 +78,14 @@ void Interpreter::interpret_assignment_statement(const Node &node) {
     }
 
     try {
-        root_scope.put(variable, value);
+        scope.put(variable, value);
     } catch (const Scope::AlreadyDefinedError &) {
         result.add_error(node, "Variable already defined");
         throw InterpretError();
     }
 }
 
-const Object &Interpreter::parse_expression(const Scope &scope, const Node &node) {
+const Object &Interpreter::parse_expression(Scope &scope, const Node &node) {
 
     if (node.get_type() == NodeType::OBJECT) {
         return parse_object(scope, node);
@@ -95,7 +96,7 @@ const Object &Interpreter::parse_expression(const Scope &scope, const Node &node
     }
 
     if (node.get_type() == NodeType::STRING) {
-        return object_store.create_string(node.get_token().value);
+        return object_store.create_string(node.get_data());
     }
 
     if (node.get_type() == NodeType::LIST) {
@@ -106,11 +107,15 @@ const Object &Interpreter::parse_expression(const Scope &scope, const Node &node
         return parse_list_for(scope, node);
     }
 
+    if (node.get_type() == NodeType::PROGRAM) {
+        return parse_program(scope, node);
+    }
+
     throw std::runtime_error("Unexpected node '" + std::string(to_str(node.get_type())) + "'");
 }
 
-const Object &Interpreter::parse_object(const Scope &scope, const Node &node) {
-    const std::string &id = node.get_token().value;
+const Object &Interpreter::parse_object(Scope &scope, const Node &node) {
+    const std::string &id = node.get_data();
 
     if (!node.get_children().empty()) {
         return parse_expression(scope, node.get_child(0)).attr(id);
@@ -124,7 +129,7 @@ const Object &Interpreter::parse_object(const Scope &scope, const Node &node) {
     }
 }
 
-const Object &Interpreter::parse_list(const Scope &scope, const Node &node) {
+const Object &Interpreter::parse_list(Scope &scope, const Node &node) {
     std::list<std::reference_wrapper<const Object>> entries;
     for (const auto &entry_node: node.get_children()) {
         entries.emplace_back(parse_expression(scope, entry_node));
@@ -132,7 +137,7 @@ const Object &Interpreter::parse_list(const Scope &scope, const Node &node) {
     return object_store.create_list(entries);
 }
 
-const Object &Interpreter::parse_list_for(const Scope &scope, const Node &node) {
+const Object &Interpreter::parse_list_for(Scope &scope, const Node &node) {
     const Node &expr_node = node.get_child(0);
     const Node &var_node = node.get_child(1);
     const Object &input_list = parse_expression(scope, node.get_child(2));
@@ -140,7 +145,7 @@ const Object &Interpreter::parse_list_for(const Scope &scope, const Node &node) 
     std::list<std::reference_wrapper<const Object>> output_list;
     for (const Object &input_obj: input_list.entries()) {
         ScopeWrapper expr_scope(scope);
-        expr_scope.put(var_node.get_token().value, input_obj);
+        expr_scope.put(var_node.get_data(), input_obj);
         const Object &output_obj = parse_expression(expr_scope, expr_node);
         output_list.emplace_back(output_obj);
     }
@@ -148,7 +153,7 @@ const Object &Interpreter::parse_list_for(const Scope &scope, const Node &node) 
     return object_store.create_list(output_list);
 }
 
-const Object &Interpreter::parse_function_call(const Scope &scope, const Node &node) {
+const Object &Interpreter::parse_function_call(Scope &scope, const Node &node) {
     const Object &function_object = parse_expression(scope, node.get_child(0));
 
     if (!function_object.is_callable()) {
@@ -175,7 +180,7 @@ const Object &Interpreter::parse_function_call(const Scope &scope, const Node &n
     CallArgList arg_list;
     for (auto arg_node = ++node.get_children().begin(); arg_node != node.get_children().end(); arg_node++) {
         if (arg_node->get_type() == NodeType::KWARG) {
-            arg_list.add(arg_node->get_token().value, arg_store.emplace_back(node, parse_expression(scope, arg_node->get_child(0))));
+            arg_list.add(arg_node->get_data(), arg_store.emplace_back(node, parse_expression(scope, arg_node->get_child(0))));
         } else {
             arg_list.add(arg_store.emplace_back(node, parse_expression(scope, *arg_node)));
         }
@@ -199,6 +204,12 @@ const Object &Interpreter::parse_function_call(const Scope &scope, const Node &n
     return call_result.return_value();
 }
 
+const Object &Interpreter::parse_program(Scope &scope, const Node &node) {
+    RootScope program_scope;
+    interpret_program(program_scope, node);
+    Object &obj = object_store.create_struct(program_scope.get_map());
+    return obj;
+}
 
 InterpretResult interpret(ObjectStore &object_store, Scope &root_scope, const Node &ast) {
     Interpreter interpreter(object_store, root_scope, ast);

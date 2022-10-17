@@ -8,17 +8,17 @@
 using namespace testing;
 
 #include "Lexer.h"
-#include "StringScanner.h"
+#include "StringSource.h"
 
 
 TEST(Lexer, test_identifier) {
-    StringScanner s("test123");
+    StringSource s("test123");
     Lexer lex(s);
     ASSERT_THAT(lex.next().type, Eq(TokenType::IDENTIFIER));
 }
 
 TEST(Lexer, test_identifier_value) {
-    StringScanner s("test123");
+    StringSource s("test123");
     Lexer lex(s);
     Token t = lex.next();
     ASSERT_THAT(t.type, Eq(TokenType::IDENTIFIER));
@@ -26,7 +26,7 @@ TEST(Lexer, test_identifier_value) {
 }
 
 TEST(Lexer, test_invalid_identifier) {
-    StringScanner s("123test");
+    StringSource s("123test");
     Lexer lex(s);
     EXPECT_THROW({
                      lex.next();
@@ -34,13 +34,13 @@ TEST(Lexer, test_invalid_identifier) {
 }
 
 TEST(Lexer, test_string) {
-    StringScanner s("\"test123\"");
+    StringSource s("\"test123\"");
     Lexer lex(s);
     ASSERT_THAT(lex.next().type, Eq(TokenType::STRING));
 }
 
 TEST(Lexer, test_string_value) {
-    StringScanner s("\"test123\"");
+    StringSource s("\"test123\"");
     Lexer lex(s);
     Token t = lex.next();
     ASSERT_THAT(t.type, Eq(TokenType::STRING));
@@ -48,7 +48,7 @@ TEST(Lexer, test_string_value) {
 }
 
 TEST(Lexer, test_string_empty) {
-    StringScanner s("\"\"");
+    StringSource s("\"\"");
     Lexer lex(s);
     Token t = lex.next();
     ASSERT_THAT(t.type, Eq(TokenType::STRING));
@@ -56,7 +56,7 @@ TEST(Lexer, test_string_empty) {
 }
 
 TEST(Lexer, test_string_escape) {
-    StringScanner s("\"\\\"\"");
+    StringSource s("\"\\\"\"");
     Lexer lex(s);
     Token t = lex.next();
     ASSERT_THAT(t.type, Eq(TokenType::STRING));
@@ -64,7 +64,7 @@ TEST(Lexer, test_string_escape) {
 }
 
 TEST(Lexer, test_invalid_string) {
-    StringScanner s("\"string");
+    StringSource s("\"string");
     Lexer lex(s);
     EXPECT_THROW({
                      lex.next();
@@ -72,19 +72,19 @@ TEST(Lexer, test_invalid_string) {
 }
 
 TEST(Lexer, test_for) {
-    StringScanner s("for");
+    StringSource s("for");
     Lexer lex(s);
     ASSERT_THAT(lex.next().type, Eq(TokenType::FOR));
 }
 
 TEST(Lexer, test_in) {
-    StringScanner s("in");
+    StringSource s("in");
     Lexer lex(s);
     ASSERT_THAT(lex.next().type, Eq(TokenType::IN));
 }
 
 TEST(Lexer, test_multiple) {
-    StringScanner s("identifier \"string\".[]()= for in");
+    StringSource s("identifier \"string\".[]()= for in");
     Lexer lex(s);
 
     ASSERT_THAT(lex.next().type, Eq(TokenType::IDENTIFIER));
@@ -101,7 +101,7 @@ TEST(Lexer, test_multiple) {
 }
 
 TEST(Lexer, test_block_comment) {
-    StringScanner s("identifier1/* comment 1*1=1 */ identifier2");
+    StringSource s("identifier1/* comment 1*1=1 */ identifier2");
     Lexer lex(s);
     ASSERT_THAT(lex.next().value, StrEq("identifier1"));
     ASSERT_THAT(lex.next().value, StrEq("identifier2"));
@@ -109,14 +109,14 @@ TEST(Lexer, test_block_comment) {
 }
 
 TEST(Lexer, test_line_comment) {
-    StringScanner s("identifier1 # comment identifier2 ");
+    StringSource s("identifier1 # comment identifier2 ");
     Lexer lex(s);
     ASSERT_THAT(lex.next().value, StrEq("identifier1"));
     ASSERT_THAT(lex.next().type, TokenType::EOS);
 }
 
 TEST(Lexer, test_multiline_comment) {
-    StringScanner s("identifier1 # comment1\n#comment2\n identifier2 ");
+    StringSource s("identifier1 # comment1\n#comment2\n identifier2 ");
     Lexer lex(s);
     ASSERT_THAT(lex.next().value, StrEq("identifier1"));
     ASSERT_THAT(lex.next().value, StrEq("identifier2"));
@@ -157,7 +157,7 @@ x = [y.z for y in q]
 export(exe)
 )----";
 
-    StringScanner s(input);
+    StringSource s(input);
 
     Lexer lex(s);
 

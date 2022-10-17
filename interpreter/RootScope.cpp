@@ -18,3 +18,7 @@ void RootScope::put(const std::string &variable, const Object &object) {
         throw AlreadyDefinedError(variable);
     }
 }
+
+const std::unordered_map<std::string, const Object &> &RootScope::get_map() {
+    return objects;
+}

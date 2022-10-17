@@ -7,7 +7,7 @@
 
 #include <list>
 
-#include "lexer/Token.h"
+#include "parser/Token.h"
 
 class RewindableTokenStream {
 public:

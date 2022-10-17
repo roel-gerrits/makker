@@ -7,7 +7,7 @@
 
 #include <list>
 #include <string>
-#include "lexer/Token.h"
+#include "parser/Source.h"
 
 enum class NodeType {
     PROGRAM,
@@ -25,15 +25,17 @@ const char *to_str(NodeType type);
 
 class Node {
 public:
-//    explicit Node(NodeType type);
+    Node(NodeType type, const Source::Location &source_location);
 
-    Node(NodeType type, Token data);
+    Node(NodeType type, const Source::Location &source_location, std::string data);
 
     void add_child(Node &&child);
 
     [[nodiscard]] NodeType get_type() const;
 
-    [[nodiscard]] const Token &get_token() const;
+    [[nodiscard]] const Source::Location &get_source_location() const;
+
+    [[nodiscard]] const std::string& get_data() const;
 
     [[nodiscard]] const std::list<Node> &get_children() const;
 
@@ -41,7 +43,8 @@ public:
 
 private:
     const NodeType type;
-    const Token token;
+    const Source::Location &source_location;
+    std::string data;
     std::list<Node> children;
 };
 

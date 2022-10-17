@@ -1,64 +1,48 @@
 //
-// Created by roel on 5/30/22.
+// Created by roel on 10/11/22.
 //
+
 
 #pragma once
 
-#include <stdexcept>
+#include "Source.h"
+#include <string>
+#include <list>
 
-#include "lexer/Token.h"
-#include "Ast.h"
 #include "ImportResolver.h"
-#include "util/RewindableTokenStream.h"
-
+#include "Source.h"
+#include "ast/Ast.h"
 
 class Parser {
 public:
-    explicit Parser(ImportResolver &import_resolver);
 
+    class Result {
+    public:
 
+        [[nodiscard]] bool success() const { return error_list.empty(); }
 
-    Node parse(TokenStream &tokens);
+        class Error {
+        public:
+            const Source::Location &source_location;
+            const std::string message;
+        };
 
-private:
-    ImportResolver &import_resolver;
+        void add_error(const Source::Location &source_location, const std::string &msg) {
+            error_list.push_back({source_location, msg});
+        }
 
-    Node parse_program(RewindableTokenStream &tokens);
+        [[nodiscard]] const std::list<Error> &errors() const { return error_list; }
 
-    Node parse_statement(RewindableTokenStream &tokens);
+        const Node &ast() { return _ast.value(); }
 
-    Node parse_assignment_statement(RewindableTokenStream &tokens);
+        void set_ast(Node ast) { _ast.emplace(std::move(ast)); }
 
-    Node parse_expr(RewindableTokenStream &tokens);
+    private:
+        std::list<Error> error_list;
+        std::optional<Node> _ast;
+    };
 
-    Node parse_list_for(RewindableTokenStream &tokens);
-
-    Node parse_list(RewindableTokenStream &tokens);
-
-    Node parse_object(RewindableTokenStream &tokens);
-
-    Node parse_variable(RewindableTokenStream &tokens);
-
-    Node parse_import_statement(RewindableTokenStream &tokens);
-
-    Node parse_call_statement(RewindableTokenStream &tokens);
-
-    Node parse_call_arg(RewindableTokenStream &tokens);
-
-    Token read(RewindableTokenStream &tokens, TokenType type);
+    virtual Result parse(Source &source) = 0;
 };
 
 
-class UnexpectedTokenError : public std::runtime_error {
-public:
-    explicit UnexpectedTokenError(const Token &token) :
-            std::runtime_error("UnexpectedToken " + std::string(to_str(token.type))),
-            token(token) {}
-
-    [[nodiscard]] const Token &get_token() const {
-        return token;
-    }
-
-private:
-    const Token &token;
-};

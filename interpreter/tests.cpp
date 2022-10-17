@@ -11,33 +11,29 @@ using testing::IsTrue;
 using testing::Return;
 using testing::Eq;
 
-#include "lexer/StringScanner.h"
-#include "lexer/Lexer.h"
 #include "parser/Parser.h"
+#include "parser/DefaultParser.h"
+#include "parser/StringSource.h"
 #include "Interpreter.h"
 #include "RootScope.h"
 #include "ScopeWrapper.h"
 #include "BasicObjectStore.h"
-#include "util/AstSerializer.h"
-#include "util/InterpretResultPrinter.h"
 #include "parser/StaticImportResolver.h"
 
 #include <functional>
 #include <utility>
 
-
-static Node parse(TokenStream &tokens) {
-    StaticImportResolver import_resolver;
-    Parser parser(import_resolver);
-    return parser.parse(tokens);
+static Node parse_str_with_import(const std::string &input, ImportResolver &import_resolver) {
+    DefaultParser parser(import_resolver);
+    StringSource source(input);
+    auto result = parser.parse(source);
+    Node ast = result.ast();
+    return ast;
 }
 
 static Node parse_str(const std::string &input) {
-    StringScanner s(input);
-    Lexer lex(s);
-    Node ast = parse(lex);
-//    printf("%s \n", ast_to_string(ast).c_str());
-    return ast;
+    StaticImportResolver import_resolver;
+    return parse_str_with_import(input, import_resolver);
 }
 
 
@@ -325,4 +321,14 @@ TEST(Interpreter, test_lists_for_faulty_var) {
 
     const auto result = interpret(store, scope, parse_str("x = [f(x) for y in [\"a\"]]"));
     EXPECT_THAT(result.success(), IsFalse());
+}
+
+TEST(Interpreter, test_import_assignment) {
+    BasicObjectStore store;
+    RootScope scope;
+    StaticImportResolver import_resolver;
+    StringSource source("t=\"txt\"");
+    import_resolver.set("t.mkr", source);
+    interpret(store, scope, parse_str_with_import("a=import(\"t.mkr\")", import_resolver));
+    EXPECT_THAT(scope.get("a").attr("t").get_string(), Eq("txt"));
 }

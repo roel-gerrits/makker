@@ -3,27 +3,27 @@
 //
 
 #include "Lexer.h"
-#include "Scanner.h"
+#include "Source.h"
 #include "Token.h"
 
 
-Lexer::Lexer(Scanner &scanner_) :
-        scanner(scanner_) {
+Lexer::Lexer(Source &source_) :
+        source(source_) {
 }
 
 Token Lexer::next() {
 
     while (true) {
         // Ignore whitespace
-        if (scanner.has_more() && std::isspace(scanner.peek())) {
-            scanner.next();
+        if (source.has_more() && std::isspace(source.peek())) {
+            source.next();
             continue;
         }
 
         // Line comment
         if (check('#')) {
-            while (scanner.has_more() && scanner.peek() != '\n') {
-                scanner.next();
+            while (source.has_more() && source.peek() != '\n') {
+                source.next();
             }
             continue;
         }
@@ -33,7 +33,7 @@ Token Lexer::next() {
             expect('*');
 
             while (true) {
-                scanner.next();
+                source.next();
                 if (!check('*')) continue;
                 if (!check('/')) continue;
                 break;
@@ -45,17 +45,17 @@ Token Lexer::next() {
     }
 
     // EOS
-    if (!scanner.has_more()) {
-        return {scanner.get_position(), TokenType::EOS};
+    if (!source.has_more()) {
+        return {source.get_location(), TokenType::EOS};
     }
 
-    Position token_start_position = scanner.get_position();
+    const Source::Location &token_start_position = source.get_location();
 
     // IDENTIFIER or keyword
-    if (std::isalpha(scanner.peek())) {
+    if (std::isalpha(source.peek())) {
         std::string identifier;
-        while (scanner.has_more() && (std::isalnum(scanner.peek()) || scanner.peek() == '_')) {
-            identifier += scanner.next();
+        while (source.has_more() && (std::isalnum(source.peek()) || source.peek() == '_')) {
+            identifier += source.next();
         }
 
         if (identifier == "for") {
@@ -74,8 +74,8 @@ Token Lexer::next() {
         std::string str;
         bool escaped = false;
         while (true) {
-            if (!scanner.has_more()) {
-                throw UnexpectedEnd(scanner.get_position());
+            if (!source.has_more()) {
+                throw UnexpectedEnd(source.get_location());
             }
 
             if (!escaped && check('\\')) {
@@ -88,7 +88,7 @@ Token Lexer::next() {
             }
 
             escaped = false;
-            str += scanner.next();
+            str += source.next();
         }
 
         return {token_start_position, TokenType::STRING, str};
@@ -124,27 +124,27 @@ Token Lexer::next() {
         return {token_start_position, TokenType::ASSIGN};
     }
 
-    throw UnexpectedCharacter(scanner.peek(), scanner.get_position());
+    throw UnexpectedCharacter(source.peek(), source.get_location());
 }
 
 bool Lexer::check(char ch) {
 
-    if (!scanner.has_more()) {
+    if (!source.has_more()) {
         return false;
     }
 
-    const bool found = scanner.peek() == ch;
-    if (found) scanner.next();
+    const bool found = source.peek() == ch;
+    if (found) source.next();
     return found;
 }
 
 void Lexer::expect(char ch) {
 
-    if (!scanner.has_more()) {
-        throw UnexpectedEnd(scanner.get_position());
+    if (!source.has_more()) {
+        throw UnexpectedEnd(source.get_location());
     }
 
-    if (scanner.next() != ch) {
-        throw UnexpectedCharacter(scanner.peek(), scanner.get_position());
+    if (source.next() != ch) {
+        throw UnexpectedCharacter(source.peek(), source.get_location());
     }
 }

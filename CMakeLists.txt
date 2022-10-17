@@ -10,39 +10,32 @@ include_directories(".")
 
 # tests
 add_executable(all_tests
-        parser/tests.cpp
+        parser/test_parser.cpp
+        parser/test_lexer.cpp
         interpreter/tests.cpp
-        lexer/tests.cpp
         util/tests.cpp
 
-        util/InterpretResultPrinter.cpp
         util/StaticTokenStream.cpp
-        util/AstSerializer.cpp
         util/RewindableTokenStream.cpp
-        lexer/Token.cpp
-        lexer/Lexer.cpp
-        lexer/StringScanner.cpp
-        parser/Ast.cpp
-        parser/Parser.cpp
+        parser/DefaultParser.cpp
+        parser/StringSource.cpp
+        parser/Token.cpp
+        parser/Lexer.cpp
         parser/StaticImportResolver.cpp
+
+        ast/Ast.cpp
+
         interpreter/Interpreter.cpp
         interpreter/BasicObjectStore.cpp
         interpreter/Object.cpp
         interpreter/RootScope.cpp
         interpreter/ScopeWrapper.cpp
-        parser/Ast.cpp
-        parser/Parser.cpp
         )
 target_link_libraries(all_tests gtest gmock gtest_main)
 
 
 # mkr executable
 add_executable(mkr
-        parser/Parser.cpp
-        parser/Ast.cpp
-        lexer/StringScanner.cpp
-        lexer/Token.cpp
-        lexer/Lexer.cpp
         util/RewindableTokenStream.cpp
         mkr/Shell.cpp
         mkr/main.cpp

@@ -1,26 +1,49 @@
 //
-// Created by roel on 10/6/22.
+// Created by roel on 10/11/22.
 //
-
 
 #pragma once
 
-#include "lexer/Token.h"
-#include <stdexcept>
-#include <utility>
+#include "Source.h"
+#include <optional>
+#include <string>
 
 class ImportResolver {
 public:
-    virtual TokenStream &resolve(const std::string &import_spec) = 0;
-};
 
+    class Result {
+    public:
 
-class ImportError : public std::runtime_error {
-public:
-    explicit ImportError(std::string import_spec_) :
-            std::runtime_error("Failed to import '" + import_spec_ + "'"),
-            import_spec(std::move(import_spec_)) {}
+        enum class Type {
+            MKR_PROGRAM,
+            EXTERNAL_OBJECT,
+            ERROR,
+        };
 
-private:
-    const std::string import_spec;
+        Result(Type type_, Source &source_) :
+                _type(type_),
+                source(source_) {}
+
+        explicit Result(Type type_) :
+                _type(type_),
+                source() {}
+
+        bool success() { return _type != Type::ERROR; };
+
+        class Error {
+
+        };
+
+        Type type() { return _type; }
+
+        Source &get_source() {
+            return source.value();
+        }
+
+    private:
+        const Type _type;
+        std::optional<std::reference_wrapper<Source>> source;
+    };
+
+    virtual Result resolve(const std::string &import_spec) = 0;
 };

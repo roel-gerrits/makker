@@ -13,6 +13,7 @@ public:
 
     void put(const std::string &variable, const Object &object) override;
 
+    const std::unordered_map<std::string, const Object &>& get_map();
 private:
     std::unordered_map<std::string, const Object &> objects;
 };

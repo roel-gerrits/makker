@@ -1,22 +1,23 @@
 //
-// Created by roel on 10/6/22.
+// Created by roel on 10/11/22.
 //
 
 
 #pragma once
 
 #include "ImportResolver.h"
-
 #include <unordered_map>
 
 class StaticImportResolver : public ImportResolver {
 public:
-    TokenStream& resolve(const std::string &import_spec) override;
+    StaticImportResolver();
 
-    void set(const std::string &import_spec, TokenStream& tokenstream);
+    void set(const std::string &import_spec, Source &source);
+
+    Result resolve(const std::string &import_spec) override;
 
 private:
-    std::unordered_map<std::string, TokenStream&> import_map;
+    std::unordered_map<std::string, Source &> import_map;
 };
 
 

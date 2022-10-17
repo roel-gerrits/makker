@@ -7,7 +7,7 @@
 
 #include <stdexcept>
 
-#include "parser/Ast.h"
+#include "ast/Ast.h"
 #include "Scope.h"
 
 
@@ -43,23 +43,25 @@ private:
     InterpretResult result;
     const Node &ast;
 
-    void interpret_program(const Node &node);
+    void interpret_program(Scope &scope, const Node &node);
 
-    void interpret_statement(const Node &node);
+    void interpret_statement(Scope &scope, const Node &node);
 
-    void interpret_call_statement(const Node &node);
+    void interpret_call_statement(Scope &scope, const Node &node);
 
-    void interpret_assignment_statement(const Node &node);
+    void interpret_assignment_statement(Scope &scope, const Node &node);
 
-    const Object &parse_expression(const Scope &scope, const Node &node);
+    const Object &parse_expression(Scope &scope, const Node &node);
 
-    const Object &parse_object(const Scope &scope, const Node &node);
+    const Object &parse_object(Scope &scope, const Node &node);
 
-    const Object &parse_list(const Scope &scope, const Node &node);
+    const Object &parse_list(Scope &scope, const Node &node);
 
-    const Object &parse_list_for(const Scope &scope, const Node &node);
+    const Object &parse_list_for(Scope &scope, const Node &node);
 
-    const Object &parse_function_call(const Scope &scope, const Node &node);
+    const Object &parse_function_call(Scope &scope, const Node &node);
+
+    const Object &parse_program(Scope &scope, const Node &node);
 };
 
 InterpretResult interpret(ObjectStore &object_store, Scope &root_scope, const Node &ast);

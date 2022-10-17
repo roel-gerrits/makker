@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "lexer/Token.h"
+#include "parser/Token.h"
 
 #include <vector>
 

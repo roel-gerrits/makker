@@ -1,32 +1,46 @@
 //
-// Created by roel on 5/30/22.
+// Created by roel on 10/11/22.
 //
 
-#include <memory>
-#include "Parser.h"
-#include "util/RewindableTokenStream.h"
+#include "DefaultParser.h"
 
-Parser::Parser(ImportResolver &import_resolver_) :
+#include "Lexer.h"
+#include <memory>
+
+DefaultParser::DefaultParser(ImportResolver &import_resolver_) :
         import_resolver(import_resolver_) {}
 
 
-Node Parser::parse(TokenStream &tokens) {
-    RewindableTokenStream rewindable_tokens(tokens);
-    return parse_program(rewindable_tokens);
-}
+class ParseError : public std::exception {
+};
 
+
+DefaultParser::Result DefaultParser::parse(Source &source) {
+    Result result;
+    Lexer lexer(source);
+    RewindableTokenStream rewindable_tokens(lexer);
+
+    try {
+        Node node = parse_program(result, rewindable_tokens);
+        result.set_ast(node);
+    } catch (const ParseError &) {
+        // ignore
+    }
+
+    return result;
+}
 
 /*
  * program
  *      : ( statement )* EOS
  */
-Node Parser::parse_program(RewindableTokenStream &tokens) {
-    Node node(NodeType::PROGRAM, tokens.peek());
+Node DefaultParser::parse_program(Result &result, RewindableTokenStream &tokens) {
+    Node node(NodeType::PROGRAM, tokens.peek().location);
 
     while (true) {
         auto snapshot = tokens.snapshot();
         try {
-            node.add_child(parse_statement(tokens));
+            node.add_child(parse_statement(result, tokens));
         } catch (const UnexpectedTokenError &e) {
             tokens.rewind(snapshot);
             break;
@@ -37,25 +51,24 @@ Node Parser::parse_program(RewindableTokenStream &tokens) {
     return node;
 }
 
-
 /*
  * statement
  *      : assignment_statement
  *      | call_statement
  */
-Node Parser::parse_statement(RewindableTokenStream &tokens) {
+Node DefaultParser::parse_statement(Result &result, RewindableTokenStream &tokens) {
     auto snapshot = tokens.snapshot();
     const Token *failure_token = nullptr;
 
     try {
-        return parse_assignment_statement(tokens);
+        return parse_assignment_statement(result, tokens);
     } catch (const UnexpectedTokenError &e) {
         failure_token = &e.get_token();
         tokens.rewind(snapshot);
     }
 
     try {
-        return parse_call_statement(tokens);
+        return parse_call_statement(result, tokens);
     } catch (const UnexpectedTokenError &e) {
         failure_token = &e.get_token();
         tokens.rewind(snapshot);
@@ -68,11 +81,11 @@ Node Parser::parse_statement(RewindableTokenStream &tokens) {
  * assignment_statement
  *    : variable ASSIGN expr
  */
-Node Parser::parse_assignment_statement(RewindableTokenStream &tokens) {
-    Node node(NodeType::ASSIGNMENT_STATEMENT, tokens.peek());
-    node.add_child(parse_variable(tokens));
+Node DefaultParser::parse_assignment_statement(Result &result, RewindableTokenStream &tokens) {
+    Node node(NodeType::ASSIGNMENT_STATEMENT, tokens.peek().location);
+    node.add_child(parse_variable(result, tokens));
     read(tokens, TokenType::ASSIGN);
-    node.add_child(parse_expr(tokens));
+    node.add_child(parse_expr(result, tokens));
     return node;
 }
 
@@ -86,26 +99,26 @@ Node Parser::parse_assignment_statement(RewindableTokenStream &tokens) {
  *      | list_for
  *      | STRING
  */
-Node Parser::parse_expr(RewindableTokenStream &tokens) {
+Node DefaultParser::parse_expr(Result &result, RewindableTokenStream &tokens) {
     auto snapshot = tokens.snapshot();
     const Token *failure_token = nullptr;
 
     try {
-        return parse_import_statement(tokens);
+        return parse_import_statement(result, tokens);
     } catch (const UnexpectedTokenError &e) {
         tokens.rewind(snapshot);
         failure_token = &e.get_token();
     }
 
     try {
-        return parse_call_statement(tokens);
+        return parse_call_statement(result, tokens);
     } catch (const UnexpectedTokenError &e) {
         tokens.rewind(snapshot);
         failure_token = &e.get_token();
     }
 
     try {
-        return parse_object(tokens);
+        return parse_object(result, tokens);
     } catch (const UnexpectedTokenError &e) {
         tokens.rewind(snapshot);
         failure_token = &e.get_token();
@@ -113,7 +126,7 @@ Node Parser::parse_expr(RewindableTokenStream &tokens) {
 
     try {
         read(tokens, TokenType::PAR_OPEN);
-        Node node = parse_object(tokens);
+        Node node = parse_object(result, tokens);
         read(tokens, TokenType::PAR_CLOSE);
         return node;
     } catch (const UnexpectedTokenError &e) {
@@ -122,14 +135,14 @@ Node Parser::parse_expr(RewindableTokenStream &tokens) {
     }
 
     try {
-        return parse_list(tokens);
+        return parse_list(result, tokens);
     } catch (const UnexpectedTokenError &e) {
         tokens.rewind(snapshot);
         failure_token = &e.get_token();
     }
 
     try {
-        return parse_list_for(tokens);
+        return parse_list_for(result, tokens);
     } catch (const UnexpectedTokenError &e) {
         tokens.rewind(snapshot);
         failure_token = &e.get_token();
@@ -137,7 +150,7 @@ Node Parser::parse_expr(RewindableTokenStream &tokens) {
 
     try {
         Token token = read(tokens, TokenType::STRING);
-        return {NodeType::STRING, token};
+        return {NodeType::STRING, token.location, token.value};
     } catch (const UnexpectedTokenError &e) {
         tokens.rewind(snapshot);
         failure_token = &e.get_token();
@@ -154,14 +167,14 @@ Node Parser::parse_expr(RewindableTokenStream &tokens) {
  * list_for
  *      : BRACK_OPEN expr FOR variable IN expr BRACK_CLOSE
  */
-Node Parser::parse_list_for(RewindableTokenStream &tokens) {
-    Node node(NodeType::LIST_FOR, tokens.peek());
+Node DefaultParser::parse_list_for(Result &result, RewindableTokenStream &tokens) {
+    Node node(NodeType::LIST_FOR, tokens.peek().location);
     read(tokens, TokenType::BRACK_OPEN);
-    node.add_child(parse_expr(tokens));
+    node.add_child(parse_expr(result, tokens));
     read(tokens, TokenType::FOR);
-    node.add_child(parse_variable(tokens));
+    node.add_child(parse_variable(result, tokens));
     read(tokens, TokenType::IN);
-    node.add_child(parse_expr(tokens));
+    node.add_child(parse_expr(result, tokens));
     read(tokens, TokenType::BRACK_CLOSE);
     return node;
 }
@@ -170,12 +183,12 @@ Node Parser::parse_list_for(RewindableTokenStream &tokens) {
  * list
  *      : BRACK_OPEN (expr)* BRACK_CLOSE
  */
-Node Parser::parse_list(RewindableTokenStream &tokens) {
-    Node node(NodeType::LIST, tokens.peek());
+Node DefaultParser::parse_list(Result &result, RewindableTokenStream &tokens) {
+    Node node(NodeType::LIST, tokens.peek().location);
     read(tokens, TokenType::BRACK_OPEN);
     while (true) {
         try {
-            node.add_child(parse_expr(tokens));
+            node.add_child(parse_expr(result, tokens));
         } catch (const UnexpectedTokenError &e) {
             // ignore
             break;
@@ -189,12 +202,12 @@ Node Parser::parse_list(RewindableTokenStream &tokens) {
  * object
  *      : ID [ DOT object ]
  */
-Node Parser::parse_object(RewindableTokenStream &tokens) {
+Node DefaultParser::parse_object(Result &result, RewindableTokenStream &tokens) {
     std::unique_ptr<Node> prev_node;
 
     while (true) {
         Token id = read(tokens, TokenType::IDENTIFIER);
-        auto node = std::make_unique<Node>(NodeType::OBJECT, id);
+        auto node = std::make_unique<Node>(NodeType::OBJECT, id.location, id.value);
 
         if (prev_node) {
             node->add_child(std::move(*prev_node));
@@ -219,9 +232,9 @@ Node Parser::parse_object(RewindableTokenStream &tokens) {
  * variable
  *      : ID
  */
-Node Parser::parse_variable(RewindableTokenStream &tokens) {
+Node DefaultParser::parse_variable(Result &result, RewindableTokenStream &tokens) {
     Token token = read(tokens, TokenType::IDENTIFIER);
-    return {NodeType::VARIABLE, token};
+    return {NodeType::VARIABLE, token.location, token.value};
 }
 
 
@@ -229,7 +242,7 @@ Node Parser::parse_variable(RewindableTokenStream &tokens) {
  * import_statement
  *      : "import" PAR_OPEN STRING PAR_CLOSE
  */
-Node Parser::parse_import_statement(RewindableTokenStream &tokens) {
+Node DefaultParser::parse_import_statement(Result &result, RewindableTokenStream &tokens) {
     const Token identifier = read(tokens, TokenType::IDENTIFIER);
     if (identifier.value != "import") {
         throw UnexpectedTokenError(identifier);
@@ -241,9 +254,15 @@ Node Parser::parse_import_statement(RewindableTokenStream &tokens) {
 
     read(tokens, TokenType::PAR_CLOSE);
 
-    TokenStream& imported_tokens = import_resolver.resolve(target.value);
+    ImportResolver::Result import_result = import_resolver.resolve(target.value);
+    if (!import_result.success()) {
+        result.add_error(identifier.location, "Import failed");
+        throw ParseError();
+    }
 
-    Node node = parse(imported_tokens);
+    Lexer lexer(import_result.get_source());
+    RewindableTokenStream token_stream(lexer);
+    Node node = parse_program(result, token_stream);
 
     return node;
 }
@@ -253,13 +272,13 @@ Node Parser::parse_import_statement(RewindableTokenStream &tokens) {
  * call_statement
  *      : object PAR_OPEN ( call_arg )* PAR_CLOSE
  */
-Node Parser::parse_call_statement(RewindableTokenStream &tokens) {
-    Node node(NodeType::CALL_STATEMENT, tokens.peek());
-    node.add_child(parse_object(tokens));
+Node DefaultParser::parse_call_statement(Result &result, RewindableTokenStream &tokens) {
+    Node node(NodeType::CALL_STATEMENT, tokens.peek().location);
+    node.add_child(parse_object(result, tokens));
     read(tokens, TokenType::PAR_OPEN);
     while (true) {
         try {
-            node.add_child(parse_call_arg(tokens));
+            node.add_child(parse_call_arg(result, tokens));
         } catch (const UnexpectedTokenError &e) {
             // ignore
             break;
@@ -275,26 +294,25 @@ Node Parser::parse_call_statement(RewindableTokenStream &tokens) {
  *    : ID ASSIGN expr
  *    | expr
  */
-Node Parser::parse_call_arg(RewindableTokenStream &tokens) {
+Node DefaultParser::parse_call_arg(Result &result, RewindableTokenStream &tokens) {
     auto snapshot = tokens.snapshot();
     try {
-        Node node(NodeType::KWARG, read(tokens, TokenType::IDENTIFIER));
+        Token id = read(tokens, TokenType::IDENTIFIER);
+        Node node(NodeType::KWARG, id.location, id.value);
         read(tokens, TokenType::ASSIGN);
-        node.add_child(parse_expr(tokens));
+        node.add_child(parse_expr(result, tokens));
         return node;
     } catch (const UnexpectedTokenError &e) {
         tokens.rewind(snapshot);
     }
 
-    return parse_expr(tokens);
+    return parse_expr(result, tokens);
 }
 
-
-Token Parser::read(RewindableTokenStream &tokens, TokenType type) {
+const Token &DefaultParser::read(RewindableTokenStream &tokens, TokenType type) {
     const Token &t = tokens.next();
     if (t.type != type) {
         throw UnexpectedTokenError(t);
     }
     return t;
 }
-
