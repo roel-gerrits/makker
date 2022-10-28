@@ -4,8 +4,6 @@
 
 #include "Shell.h"
 
-//#include <ncurses.h>
-
 #include <string>
 #include <stdio.h>
 #include <unistd.h>
@@ -18,11 +16,10 @@ constexpr int control(char c) {
     return c & 0x1f;
 }
 
-Shell::Shell() {
-}
+Shell::Shell() :
+        exit_flag(false) {}
 
-Shell::~Shell() {
-}
+Shell::~Shell() {}
 
 
 enum class Key {
@@ -116,7 +113,7 @@ Event getch() {
     }
 }
 
-void Shell::run() {
+void Shell::run(ShellHandler &handler) {
     termios old_term_settings{};
     tcgetattr(STDIN_FILENO, &old_term_settings);
 
@@ -125,22 +122,24 @@ void Shell::run() {
     term_settings.c_lflag &= ~(ECHO);
     tcsetattr(STDIN_FILENO, TCSANOW, &term_settings);
 
-    std::string line;
-    unsigned int linenr = 1;
     unsigned int cursor = 0;
 
     while (true) {
+//        printf("starting loop, exit_flag=%u, line=%s \n", exit_flag, line.c_str());
 
         printf("\u001b[1000D");
         printf("\u001b[2K");
-        printf("%3u | %s", linenr, line.c_str());
+        printf(">>> %s", line.c_str());
         printf("\u001b[1000D");
-        printf("\u001b[%uC", cursor + 6);
+        printf("\u001b[%uC", cursor + 4);
+
+        if (exit_flag) break;
 
         Event event = getch();
         if (event.key == Key::CTRLD) {
-            printf("exit\n");
-            break;
+            handler.handle_exit();
+//            printf("ctrld handled \n");
+            continue;
         }
 
         if (event.key == Key::UP) {
@@ -185,9 +184,8 @@ void Shell::run() {
         }
 
         if (event.key == Key::RETURN) {
-            line.clear();
-            cursor = 0;
-            linenr++;
+            handler.handle_line();
+            cursor = line.length();
             printf("\n");
             continue;
         }
@@ -203,6 +201,22 @@ void Shell::run() {
             continue;
         }
     }
-
+    printf("\n");
     tcsetattr(STDIN_FILENO, TCSANOW, &old_term_settings);
+}
+
+void Shell::println(const std::string &str) {
+    printf("\n%s", str.c_str());
+}
+
+const std::string &Shell::get_line() const {
+    return line;
+}
+
+void Shell::set_line(const std::string &str) {
+    line = str;
+}
+
+void Shell::exit() {
+    exit_flag = true;
 }

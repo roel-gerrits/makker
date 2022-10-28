@@ -32,15 +32,15 @@ const char *to_str(NodeType type) {
 }
 
 
-Node::Node(NodeType type, const Source::Location &source_location) :
-        type(type),
-        source_location(source_location),
+Node::Node(NodeType type_, const Source::Location &source_location_) :
+        type(type_),
+        source_location(source_location_),
         data(),
         children() {}
 
-Node::Node(NodeType type, const Source::Location &source_location, std::string data_) :
-        type(type),
-        source_location(source_location),
+Node::Node(NodeType type_, const Source::Location &source_location_, std::string data_) :
+        type(type_),
+        source_location(source_location_),
         data(std::move(data_)),
         children() {}
 

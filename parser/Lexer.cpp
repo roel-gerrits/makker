@@ -32,7 +32,7 @@ Token Lexer::next() {
         if (check('/')) {
             expect('*');
 
-            while (true) {
+            while (source.has_more()) {
                 source.next();
                 if (!check('*')) continue;
                 if (!check('/')) continue;

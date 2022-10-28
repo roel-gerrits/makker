@@ -4,8 +4,8 @@
 
 #include "RewindableTokenStream.h"
 
-RewindableTokenStream::RewindableTokenStream(TokenStream &source) :
-        source(source),
+RewindableTokenStream::RewindableTokenStream(TokenStream &source_) :
+        source(source_),
         buffer(),
         buffer_pos(buffer.begin()),
         buffer_start_index(0),
@@ -31,8 +31,8 @@ const Token &RewindableTokenStream::next() {
     return t;
 }
 
-RewindableTokenStream::Snapshot::Snapshot(unsigned int index) :
-        index(index) {}
+RewindableTokenStream::Snapshot::Snapshot(unsigned int index_) :
+        index(index_) {}
 
 RewindableTokenStream::Snapshot RewindableTokenStream::snapshot() {
     return RewindableTokenStream::Snapshot(buffer_current_index);

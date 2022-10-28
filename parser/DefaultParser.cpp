@@ -25,6 +25,10 @@ DefaultParser::Result DefaultParser::parse(Source &source) {
         result.set_ast(node);
     } catch (const ParseError &) {
         // ignore
+    } catch (const UnexpectedCharacter &e) {
+        result.add_error(e.get_position(), e.what());
+    } catch (const UnexpectedEnd &e) {
+        result.add_error(e.get_position(), e.what());
     }
 
     return result;
@@ -47,8 +51,13 @@ Node DefaultParser::parse_program(Result &result, RewindableTokenStream &tokens)
         }
     }
 
-    read(tokens, TokenType::EOS);
-    return node;
+    try {
+        read(tokens, TokenType::EOS);
+        return node;
+    } catch (const UnexpectedTokenError &e) {
+        result.add_error(tokens.peek().location, "Unexpected EOS");
+        throw ParseError();
+    }
 }
 
 /*
@@ -86,6 +95,7 @@ Node DefaultParser::parse_assignment_statement(Result &result, RewindableTokenSt
     node.add_child(parse_variable(result, tokens));
     read(tokens, TokenType::ASSIGN);
     node.add_child(parse_expr(result, tokens));
+
     return node;
 }
 

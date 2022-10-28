@@ -40,6 +40,12 @@ private:
 
 class UnexpectedEnd : public std::runtime_error {
 public:
-    explicit UnexpectedEnd(const Source::Location& pos) :
-            std::runtime_error("Unexpected end") {}
+    explicit UnexpectedEnd(const Source::Location &location_) :
+            std::runtime_error("Unexpected end"),
+            location(location_) {}
+
+    [[nodiscard]] const Source::Location &get_position() const { return location; };
+
+private:
+    const Source::Location &location;
 };

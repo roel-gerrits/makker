@@ -34,7 +34,7 @@ static void print_error(const Parser::Result &parse_result) {
     printf("\nERROR \n");
     for (const Parser::Result::Error &error: parse_result.errors()) {
         printf(" > %s\n", error.message.c_str());
-        printf("     %s\n", error.source_location.describe().c_str());
+        printf("     %s\n", error.source_location.annotate("").c_str());
     }
 }
 
@@ -167,5 +167,23 @@ TEST(Parser, test_import_statement) {
 TEST(Parser, test_import_failure) {
     StaticImportResolver import_resolver;
     auto result = parse_with_import("x = import(\"unknown-file.mkr\")", import_resolver);
+    EXPECT_THAT(result.success(), IsFalse());
+}
+
+TEST(Parser, test_parse_error) {
+    StaticImportResolver import_resolver;
+    auto result = parse_with_import("x", import_resolver);
+    EXPECT_THAT(result.success(), IsFalse());
+}
+
+TEST(Parser, test_parse_error_2) {
+    StaticImportResolver import_resolver;
+    auto result = parse_with_import("4", import_resolver);
+    EXPECT_THAT(result.success(), IsFalse());
+}
+
+TEST(Parser, test_parse_error_3) {
+    StaticImportResolver import_resolver;
+    auto result = parse_with_import("x=\"x", import_resolver);
     EXPECT_THAT(result.success(), IsFalse());
 }

@@ -8,7 +8,8 @@
 #include "Source.h"
 
 #include <string>
-#include <vector>
+#include <list>
+#include <stdexcept>
 
 class StringSource : public Source {
 public:
@@ -22,23 +23,22 @@ public:
 
     class Location : public Source::Location {
     public:
-        Location(const StringSource &source_, int line_, int col_) :
+        Location(const StringSource &source_, int start_of_line_, int line_, int col_) :
                 source(source_),
+                start_of_line(start_of_line_),
                 line(line_),
                 col(col_) {}
+
 
         [[nodiscard]] const Source &get_source() const override {
             return source;
         }
 
-        [[nodiscard]] std::string describe() const override {
-            char buf[128];
-            snprintf(buf, sizeof(buf), "StringSource[%u:%u]", line, col);
-            return buf;
-        }
+        [[nodiscard]] std::string annotate(const std::string &msg) const override;
 
     private:
         const StringSource &source;
+        const int start_of_line;
         const int line;
         const int col;
     };
@@ -46,12 +46,13 @@ public:
     [[nodiscard]] const Location &get_location() override;
 
 private:
-    const std::string str;
+    const std::string raw_str;
     unsigned int index;
-    unsigned int line;
-    unsigned int col;
+    unsigned int current_start_of_line;
+    unsigned int current_line;
+    unsigned int current_col;
 
-    std::vector<Location> location_markers;
+    std::list<Location> location_markers;
 };
 
 

@@ -108,6 +108,12 @@ TEST(Lexer, test_block_comment) {
     ASSERT_THAT(lex.next().type, TokenType::EOS);
 }
 
+TEST(Lexer, test_incomplete_block_comment) {
+    StringSource s("/*");
+    Lexer lex(s);
+    ASSERT_THAT(lex.next().type, TokenType::EOS);
+}
+
 TEST(Lexer, test_line_comment) {
     StringSource s("identifier1 # comment identifier2 ");
     Lexer lex(s);

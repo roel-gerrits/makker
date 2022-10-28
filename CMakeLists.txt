@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_compile_options("-Wall")
 add_compile_options("-Wswitch-enum")
+#add_compile_options("-Wshadow")
 
 include_directories(".")
 
@@ -36,9 +37,25 @@ target_link_libraries(all_tests gtest gmock gtest_main)
 
 # mkr executable
 add_executable(mkr
-        util/RewindableTokenStream.cpp
+        mkr/Repl.cpp
         mkr/Shell.cpp
         mkr/main.cpp
+
+        util/StaticTokenStream.cpp
+        util/RewindableTokenStream.cpp
+        parser/DefaultParser.cpp
+        parser/StringSource.cpp
+        parser/Token.cpp
+        parser/Lexer.cpp
+        parser/StaticImportResolver.cpp
+
+        ast/Ast.cpp
+
+        interpreter/Interpreter.cpp
+        interpreter/BasicObjectStore.cpp
+        interpreter/Object.cpp
+        interpreter/RootScope.cpp
+        interpreter/ScopeWrapper.cpp
         )
 target_link_libraries(mkr)
 

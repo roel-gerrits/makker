@@ -12,7 +12,7 @@ public:
     public:
         [[nodiscard]] virtual const Source &get_source() const = 0;
 
-        [[nodiscard]] virtual std::string describe() const = 0;
+        [[nodiscard]] virtual std::string annotate(const std::string& msg) const = 0;
     };
 
     [[nodiscard]] virtual bool has_more() const = 0;
