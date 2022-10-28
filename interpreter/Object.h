@@ -211,9 +211,9 @@ public:
 
 class UnknownAttributeError : public std::runtime_error {
 public:
-    explicit UnknownAttributeError(const std::string &attr) :
-            std::runtime_error("Unknown attribute '" + attr + "'"),
-            attr(attr) {};
+    explicit UnknownAttributeError(const std::string &attr_) :
+            std::runtime_error("Unknown attribute '" + attr_ + "'"),
+            attr(attr_) {};
 private:
     const std::string attr;
 };

@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_compile_options("-Wall")
 add_compile_options("-Wswitch-enum")
-#add_compile_options("-Wshadow")
+add_compile_options("-Wshadow")
+add_compile_options("-Werror")
 
 include_directories(".")
 

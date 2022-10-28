@@ -48,9 +48,9 @@ private:
 
 class UnexpectedTokenError : public std::runtime_error {
 public:
-    explicit UnexpectedTokenError(const Token &token) :
-            std::runtime_error("UnexpectedToken " + std::string(to_str(token.type))),
-            token(token) {}
+    explicit UnexpectedTokenError(const Token &token_) :
+            std::runtime_error("UnexpectedToken " + std::string(to_str(token_.type))),
+            token(token_) {}
 
     [[nodiscard]] const Token &get_token() const {
         return token;

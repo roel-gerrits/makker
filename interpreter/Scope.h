@@ -15,18 +15,18 @@ public:
 
     class UndefinedVariableError : public std::runtime_error {
     public:
-        explicit UndefinedVariableError(const std::string &variable) :
-                std::runtime_error("Undefined variable '" + variable + "'"),
-                variable(variable) {};
+        explicit UndefinedVariableError(const std::string &variable_) :
+                std::runtime_error("Undefined variable '" + variable_ + "'"),
+                variable(variable_) {};
     private:
         const std::string variable;
     };
 
     class AlreadyDefinedError : public std::runtime_error {
     public:
-        explicit AlreadyDefinedError(const std::string &variable) :
-                std::runtime_error("Variable '" + variable + "' is already defined"),
-                variable(variable) {};
+        explicit AlreadyDefinedError(const std::string &variable_) :
+                std::runtime_error("Variable '" + variable_ + "' is already defined"),
+                variable(variable_) {};
     private:
         const std::string variable;
     };
