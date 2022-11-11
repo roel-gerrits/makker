@@ -270,11 +270,15 @@ Node DefaultParser::parse_import_statement(Result &result, RewindableTokenStream
         throw ParseError();
     }
 
-    Lexer lexer(import_result.get_source());
-    RewindableTokenStream token_stream(lexer);
-    Node node = parse_program(result, token_stream);
+    if (import_result.is_mkr_program()) {
+        Lexer lexer(import_result.get_source());
+        RewindableTokenStream token_stream(lexer);
+        Node node = parse_program(result, token_stream);
+        return node;
+    }
 
-    return node;
+    result.add_error(identifier.location, "Unknown import type");
+    throw ParseError();
 }
 
 

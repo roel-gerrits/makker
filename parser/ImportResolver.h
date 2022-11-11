@@ -30,11 +30,13 @@ public:
 
         bool success() { return _type != Type::ERROR; };
 
+        bool is_mkr_program() { return _type == Type::MKR_PROGRAM; }
+
+        bool is_external_object() { return _type == Type::EXTERNAL_OBJECT; }
+
         class Error {
 
         };
-
-        Type type() { return _type; }
 
         Source &get_source() {
             return source.value();
